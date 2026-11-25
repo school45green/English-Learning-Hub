@@ -473,9 +473,18 @@ async function teacherLoad(){
       const box=document.createElement('fieldset');
       box.className='secure-card';
       box.innerHTML='<legend>سؤال</legend>'+fields('prompt','نص السؤال','maxlength="500"')+
-        [1,2,3,4].map(x=>fields('choice'+x,'الخيار '+x,'maxlength="300"')).join('')+
-        select('correct','رقم الخيار الصحيح',[1,2,3,4].map(x=>`<option>${x}</option>`).join(''))+
-        '<button type="button" class="action secondary">إزالة السؤال</button>';
+        select('type','نوع السؤال','<option value="multiple" selected>اختيار من متعدد</option><option value="boolean">صواب أو خطأ</option>')+
+        '<div data-choices></div><button type="button" class="action secondary">إزالة السؤال</button>';
+      const type=box.querySelector('[name="type"]');
+      const choiceFields=box.querySelector('[data-choices]');
+      const renderChoices=()=>{
+        const boolean=type.value==='boolean';
+        choiceFields.innerHTML=(boolean?'':[1,2,3,4].map(n=>fields('choice'+n,'الخيار '+n,'maxlength="300"')).join(''))+
+          select('correct','الإجابة الصحيحة',(boolean?['True','False']:['1','2','3','4'])
+            .map((label,i)=>'<option value="'+i+'">'+label+'</option>').join(''));
+      };
+      type.onchange=renderChoices;
+      renderChoices();
       box.querySelector('button').onclick=()=>{if($('questions').children.length>1)box.remove()};
       $('questions').append(box);
     };
@@ -485,9 +494,9 @@ async function teacherLoad(){
   bind('newActivity',data=>{
     const questions=Array.from($('questions').children,(box,i)=>{
       const value=name=>box.querySelector('[name="'+name+'"]').value.trim();
-      const choices=[1,2,3,4].map(n=>value('choice'+n));
-      if(choices.some(x=>!x)||new Set(choices).size!==4)throw new Error('أدخلي أربعة خيارات مختلفة لكل سؤال');
-      return {id:'q'+(i+1),prompt:value('prompt'),choices,correct:choices[Number(value('correct'))-1],points:1};
+      const choices=value('type')==='boolean'?['True','False']:[1,2,3,4].map(n=>value('choice'+n));
+      if(choices.some(x=>!x)||new Set(choices).size!==choices.length)throw new Error('أدخلي خيارات مختلفة لكل سؤال');
+      return {id:'q'+(i+1),prompt:value('prompt'),choices,correct:choices[Number(value('correct'))],points:1};
     });
     return checked(client.rpc('hub_create_activity',{p_title:data.title,p_class:data.classId,p_kind:data.kind,p_unit:Number(data.unit),p_skill:data.skill,p_attempts:Number(data.attempts),p_questions:questions})).then(()=> 'حُفظ الاختبار كمسودة');
   });

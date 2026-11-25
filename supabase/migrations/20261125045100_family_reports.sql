@@ -62,7 +62,11 @@ begin
         select a.title,a.unit_no,a.skill,a.kind,
           exists(select 1 from public.submissions s where s.student_id=v_access.student_id and s.activity_id=a.id) as submitted
         from public.activities a
-        where a.published and hub_internal.activity_assigned(v_access.student_id,a.id)
+        where a.published and exists (
+          select 1 from public.activity_targets t
+          join public.students s on s.class_id=t.class_id
+          where t.activity_id=a.id and s.id=v_access.student_id
+        )
         order by a.unit_no nulls last,a.title limit 250
       ) x
     ),
