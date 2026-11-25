@@ -480,7 +480,7 @@ async function teacherLoad(){
       const choiceFields=box.querySelector('[data-choices]');
       const renderChoices=()=>{
         const boolean=type.value==='boolean';
-        choiceFields.innerHTML=(boolean?'':[1,2,3,4].map(n=>fields('choice'+n,'الخيار '+n,'maxlength="300"')).join(''))+
+        choiceFields.innerHTML=(boolean?'':[1,2,3,4].map(n=>n<3?fields('choice'+n,'الخيار '+n,'maxlength="300"'):`<label>الخيار ${n} <input name="choice${n}" maxlength="300"></label>`).join(''))+
           select('correct','الإجابة الصحيحة',(boolean?['True','False']:['1','2','3','4'])
             .map((label,i)=>'<option value="'+i+'">'+label+'</option>').join(''));
       };
@@ -517,8 +517,10 @@ async function teacherLoad(){
     const questions=Array.from($('questions').children,(box,i)=>{
       const value=name=>box.querySelector('[name="'+name+'"]').value.trim();
       const choices=value('type')==='boolean'?['True','False']:[1,2,3,4].map(n=>value('choice'+n));
-      if(choices.some(x=>!x)||new Set(choices).size!==choices.length)throw new Error('أدخلي خيارات مختلفة لكل سؤال');
-      return {id:'q'+(i+1),prompt:value('prompt'),choices,correct:choices[Number(value('correct'))],points:Number(value('points'))};
+      const correct=choices[Number(value('correct'))];
+      const available=choices.filter(Boolean);
+      if(!correct||available.length<2||new Set(available).size!==available.length)throw new Error('أدخلي خيارين مختلفين على الأقل واختاري إجابة موجودة.');
+      return {id:'q'+(i+1),prompt:value('prompt'),choices:available,correct,points:Number(value('points'))};
     });
     const targets=new FormData($('newActivity'));
     return checked(client.rpc('hub_create_scoped_activity',{p_title:data.title,p_classes:targets.getAll('classId'),p_students:targets.getAll('studentId'),p_kind:data.kind,p_unit:Number(data.unit),p_skill:data.skill,p_attempts:Number(data.attempts),p_questions:questions})).then(()=> 'حُفظ الاختبار كمسودة');

@@ -23,7 +23,7 @@ const arabicDigits = value => value.replace(/[٠-٩۰-۹]/gu, digit => String(di
 const arabicLetters = value => value.replace(/[یکھ]/gu, letter => ({'ی':'ي','ک':'ك','ھ':'ه'})[letter]);
 
 function readArial(value) {
-  if (/^[\p{Script=Arabic}\p{M}\s]+$/u.test(value)) return spaces(value);
+  if (/^[\p{Script=Arabic}\p{M}\s]+$/u.test(value)) return spaces(arabicLetters(value.normalize('NFKC')));
   let text = '';
   for (const symbol of Array.from(value).reverse()) {
     if (symbol === '\x03' || /\s/u.test(symbol)) {
@@ -100,7 +100,7 @@ async function readPdf(bytes) {
       const lines = grouping(items);
       let gradeLevel, section;
       let foundRows = 0;
-      for (const line of lines) {
+      for (const [lineIndex,line] of lines.entries()) {
         const texts = line.map(item => item.str.trim());
         const decoded = texts.map(readArial);
         const header = decoded.filter(Boolean).join(' ');
@@ -109,6 +109,23 @@ async function readPdf(bytes) {
         if (decoded.includes('الفصل')) {
           const number = texts.map(arabicDigits).find(text => /^[0-9]{1,2}$/.test(text));
           if (number) section = Number(number);
+        }
+        const combined = texts.length === 2 && texts[1].match(/^[0-9٠-٩۰-۹]{10}\s+(.+)$/u);
+        const serialLine = lines[lineIndex + 1];
+        if (combined && /^[0-9٠-٩۰-۹]{1,2}$/u.test(texts[0]) &&
+          serialLine?.length === 1 && serialLine[0].transform[4] > line[1].transform[4] &&
+          line[1].transform[5] - serialLine[0].transform[5] < 10 &&
+          /^\d{1,3}$/.test(arabicDigits(serialLine[0].str.trim()))) {
+          const index = Number(arabicDigits(serialLine[0].str.trim()));
+          const rowSection = Number(arabicDigits(texts[0]));
+          if (index !== expected || (section && section !== rowSection)) {
+            result.issues.push(`الصفحة ${number} – راجعي الفصل أو تسلسل الصف رقم ${expected}.`);
+          }
+          section = rowSection;
+          expected = index + 1;
+          foundRows++;
+          recordName(result, readArial(combined[1]), `الصفحة ${number} – الصف ${index}`);
+          continue;
         }
         const serial = arabicDigits(texts.at(-1));
         const position = texts.findIndex(text => /^[0-9]{10}$/.test(arabicDigits(text)));
