@@ -33,7 +33,8 @@ function studentSelect(){return `<select id="student">${demoStudents.map(x=>`<op
 </script><script type="module">
 import {downloadWorkbook,printPrivateTable} from "./assets/spreadsheet.js";
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm';
-const client=createClient('https://htnfjgstpsooejskffqu.supabase.co','sb_publishable_G614pC0LC4k7-gCxR3o9QQ_97dZt6Mp');
+const supabaseUrl='https://htnfjgstpsooejskffqu.supabase.co';
+const client=createClient(supabaseUrl,'sb_publishable_G614pC0LC4k7-gCxR3o9QQ_97dZt6Mp');
 const $=id=>document.getElementById(id);
 const safe=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const info=(id,msg,err=false)=>{$(id).textContent=msg;$(id).className=err?'error':'success'};
@@ -138,13 +139,25 @@ async function saveResource(group,id,file){
   if(!file.size||file.size>10*1024*1024)throw new Error('اختاري ملفًا بحجم لا يتجاوز 10 ميغابايت');
   await checked(client.storage.from('hub-private').upload(group+'/'+id+'/resource',file,{upsert:true,contentType:file.type,cacheControl:'0'}));
 }
-function resourceButton(group,id){
+function resourceButton(group,id,code=null){
   const item=document.createElement('button');
   item.type='button';item.className='action secondary';item.textContent='تنزيل المرفق';
   item.onclick=async()=>{
     item.disabled=true;
     try{
-      const file=await checked(client.storage.from('hub-private').download(group+'/'+id+'/resource'));
+      let file;
+      if(code){
+        const response=await fetch(supabaseUrl+'/functions/v1/student-resource',{
+          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:code.token,group,id})
+        });
+        if(!response.ok)throw new Error('Resource unavailable');
+        const {url}=await response.json();
+        const result=await fetch(url,{cache:'no-store'});
+        if(!result.ok)throw new Error('Resource unavailable');
+        file=await result.blob();
+      }else{
+        file=await checked(client.storage.from('hub-private').download(group+'/'+id+'/resource'));
+      }
       if(!item.isConnected)return;
       const extension={'application/pdf':'pdf','image/png':'png','image/jpeg':'jpg','audio/mpeg':'mp3','audio/ogg':'ogg'}[file.type]||'bin';
       download('English-Learning-Hub.'+extension,file,file.type);
@@ -304,7 +317,7 @@ async function renderLearningTasks(code,version){
       board.innerHTML=table(['القسم','العنوان','الوصف','تاريخ الأسبوع'],data.honors.map(h=>[sections[h.category]?.[1],h.title,h.description,h.week_start]));
       for(const honor of data.honors.filter(h=>h.media||h.legacy&&!code)){
         const row=document.createElement('p');
-        row.append(document.createTextNode(honor.title+' '),honor.media?learningMediaButton(honor.media,code):resourceButton('honors',honor.id));
+        row.append(document.createTextNode(honor.title+' '),honor.media?learningMediaButton(honor.media,code):resourceButton('honors',honor.id,code));
         board.append(row);
       }
     }
@@ -877,7 +890,7 @@ sectionPanel(pages[3][1],['remedial','enrichment'].map(kind=>card(kind==='remedi
 table(['الخطة','التعليمات','الموعد','الحالة'],(data.plans||[]).filter(x=>x.kind===kind).map(x=>[x.title,x.instructions,x.due_on,x.completed?'مكتملة':'قيد التنفيذ'])))).join('')+'<div id="myLearning"></div>')+
 sectionPanel(pages[4][1],'<div id="myHonorDetails">جارٍ التحميل…</div>');
 installSectionBoard(root,restore,$('closeSecure'));
-for(const a of activities){const box=document.createElement('div');box.className='secure-card';const title=document.createElement('h3');title.textContent=a.title||'نشاط';box.append(title);if(a.resource&&!code)box.append(resourceButton('units',a.id));const form=document.createElement('form');const questions=Array.isArray(a.questions)?a.questions:(Array.isArray(a.answer_key?.questions)?a.answer_key.questions:[]);if(a.attempts_used>=a.max_attempts){box.append('اكتملت المحاولات المتاحة.');$('myActivities').append(box);continue}if(!questions.length){const p=document.createElement('p');p.textContent='لا توجد أسئلة متاحة لهذا النشاط حاليًا.';box.append(p);$('myActivities').append(box);continue}questions.forEach((q,i)=>{const field=document.createElement('fieldset');const legend=document.createElement('legend');legend.textContent=q.question||q.prompt||'Question '+(i+1);field.append(legend);(q.options||q.choices||[]).forEach((opt,j)=>{const lab=document.createElement('label');lab.className='quiz-option';const input=document.createElement('input');input.type='radio';input.name='q'+i;input.value=String(j);input.required=true;input.checked=a.draft?.[q.id]===opt;lab.append(input,document.createTextNode(' '+(typeof opt==='string'?opt:opt.text||String(opt))));field.append(lab)});form.append(field)});const btn=document.createElement('button');btn.className='action';btn.textContent='تسليم النشاط';form.append(btn);const status=document.createElement('p');
+for(const a of activities){const box=document.createElement('div');box.className='secure-card';const title=document.createElement('h3');title.textContent=a.title||'نشاط';box.append(title);if(a.resource)box.append(resourceButton('units',a.id,code));const form=document.createElement('form');const questions=Array.isArray(a.questions)?a.questions:(Array.isArray(a.answer_key?.questions)?a.answer_key.questions:[]);if(a.attempts_used>=a.max_attempts){box.append('اكتملت المحاولات المتاحة.');$('myActivities').append(box);continue}if(!questions.length){const p=document.createElement('p');p.textContent='لا توجد أسئلة متاحة لهذا النشاط حاليًا.';box.append(p);$('myActivities').append(box);continue}questions.forEach((q,i)=>{const field=document.createElement('fieldset');const legend=document.createElement('legend');legend.textContent=q.question||q.prompt||'Question '+(i+1);field.append(legend);(q.options||q.choices||[]).forEach((opt,j)=>{const lab=document.createElement('label');lab.className='quiz-option';const input=document.createElement('input');input.type='radio';input.name='q'+i;input.value=String(j);input.required=true;input.checked=a.draft?.[q.id]===opt;lab.append(input,document.createTextNode(' '+(typeof opt==='string'?opt:opt.text||String(opt))));field.append(lab)});form.append(field)});const btn=document.createElement('button');btn.className='action';btn.textContent='تسليم النشاط';form.append(btn);const status=document.createElement('p');
 let revision=a.draft_revision??0;
 let save=Promise.resolve();
 let submitting=false;

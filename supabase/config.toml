@@ -1,0 +1,4 @@
+project_id = "English-Learning-Hub"
+
+[functions.student-resource]
+verify_jwt = false
