@@ -535,8 +535,8 @@ async function teacherLoad(refresh=false){
       break;
     case 13: body=reportCard+archive;break;
     case 14:
-      body=card('حسابات الإدارة', '<p id="leadStatus" role="status"></p>'+form('manageLeadership',select('role','الحساب',leadRoles)+select('action','الإجراء','<option value="issue">إصدار مفتاح دخول جديد</option><option value="disable">تعطيل الدخول</option>'),'تنفيذ')+
-        '<p>إصدار مفتاح جديد يلغي المفتاح السابق لهذا الحساب. شاركي المفتاح على انفراد.</p><output id="leadKey" dir="ltr" style="overflow-wrap:anywhere"></output>')+card('دخول الطالبة برمز رباعي',
+      body=card('بوابة الإدارة', '<p id="leadStatus" role="status"></p>'+form('manageLeadership',select('role','الحساب',leadRoles)+select('action','الإجراء','<option value="issue">إصدار رابط خاص</option><option value="renew">تجديد الرابط</option><option value="disable">إلغاء الرابط والجلسة</option>'),'تنفيذ')+
+        '<p>الرابط صالح لمدة 24 ساعة ويُستخدم مرة واحدة. تستمر الجلسة 8 ساعات. تجديد الرابط أو إلغاؤه ينهي جلسة الحساب.</p><input id="leadKey" dir="ltr" aria-label="رابط الإدارة الخاص" readonly hidden><button id="copyLead" type="button" class="action secondary" hidden>نسخ الرابط</button>')+card('دخول الطالبة برمز رباعي',
       form('issueClassCodes',select('id','الفصل',classOptions),'إصدار رموز الفصل')+
       form('issueStudentCode',select('id','الطالبة',activeOptions),'إصدار أو إعادة تعيين رمز')+
       '<p class="muted">تظهر الرموز عند إصدارها. سلّمي كل طالبة رمزها على انفراد. تنتهي صلاحية الرمز بعد 90 يومًا. إصدار رمز للفصل يشمل الطالبات اللاتي ليس لديهن رمز ساري.</p><div id="studentInvite"></div>'+
@@ -564,16 +564,26 @@ async function teacherLoad(refresh=false){
     const status=$('leadStatus');
     const key=$('leadKey');
     const refresh=async()=>{
-      const state=await checked(client.rpc('hub_manage_leadership',{p_role:null,p_action:'status'}));
-      status.textContent=['principal','vice_principal'].map(r=>leadNames[r]+' — '+(state[r]?'مفعّل':'غير مفعّل')).join(' | ');
+      const state=await checked(client.rpc('hub_leadership_link',{p_role:null,p_action:'status'}));
+      status.textContent=['principal','vice_principal'].map(r=>leadNames[r]+' — '+({active:'جلسة نشطة',pending:'بانتظار التفعيل',inactive:'غير مفعّل'}[state[r]]||'غير مفعّل')).join(' | ');
     };
     refresh().catch(()=>status.textContent='تعذّر تحميل حالة الحسابين');
+    const copy=$('copyLead');
+    const clear=()=>{key.value='';key.hidden=true;copy.hidden=true};
+    $('manageLeadership').onchange=clear;
+    copy.onclick=async()=>{
+      try{await navigator.clipboard.writeText(key.value);info('teacherMsg','نُسخ الرابط')}
+      catch{key.select();info('teacherMsg','حددي نسخ من القائمة لنسخ الرابط')}
+    };
     bind('manageLeadership',async({role,action})=>{
-      key.textContent='';
-      const result=await checked(client.rpc('hub_manage_leadership',{p_role:role,p_action:action}));
-      key.textContent=result.key||'';
+      clear();
+      const result=await checked(client.rpc('hub_leadership_link',{p_role:role,p_action:action}));
+      if(result.link){
+        key.value=new URL(location.pathname,location.origin).href+'#lead='+result.link;
+        key.hidden=false;copy.hidden=false;
+      }
       await refresh();
-      return action==='issue'?'صدر مفتاح دخول '+leadNames[role]:'عُطّل حساب '+leadNames[role];
+      return action!=='disable'?'صدر رابط دخول '+leadNames[role]:'عُطّل حساب '+leadNames[role];
     },false);
   }
   const manageClass=(id,name,grade,archive=null)=>checked(client.rpc('hub_manage_class',
@@ -951,6 +961,55 @@ async function loadLearningReviews(kind,studentName,version){
 }
 const leadNames={principal:'المديرة',vice_principal:'الوكيلة'};
 const leadRoles=Object.entries(leadNames).map(([role,name])=>`<option value="${role}">${name}</option>`).join('');
+function renderLead(root,role,report,logout){
+      const panels=[
+        ['📊','تقرير الفصول',table(['الفصل','المقرر','الطالبات','التسليمات','الخطط المكتملة'],report.classes.map(c=>[c.name,c.course,c.students,c.submissions,c.completed]))],
+        ['📝','النتائج المعتمدة',table(['الطالبة','الفصل','النشاط','الدرجة','من'],report.results.map(r=>[r.full_name,r.class_name,r.title,r.score,r.max_score]))],
+        ['🎯','الخطط العلاجية والإثرائية',table(['الطالبة','الفصل','الخطة','المسار','الحالة'],report.plans.map(p=>[p.full_name,p.class_name,p.title,labels[p.kind]||p.kind,p.completed?'مكتملة':'قيد التنفيذ']))],
+        ['🏆','إنجازات الطالبات',table(['الطالبة','الفصل','التكريم','الأسبوع'],report.honors.map(h=>[h.full_name,h.class_name,h.title,h.week_start]))]
+      ];
+      root.innerHTML='<h2>لوحة '+leadNames[role]+'</h2><p>للاطلاع فقط</p>'+sectionMenu(panels)+panels.map(([,name,body])=>sectionPanel(name,body)).join('')+'<button class="action secondary" id="leadExit">تسجيل الخروج</button>';
+      installSectionBoard(root);
+      $('leadExit').onclick=logout;
+      moveToPage();
+}
+const sessionSlot='EnglishLearningHub.leadSession';
+async function openLead(invite){
+  $('adminToggle').click();
+  const root=$('detail');
+  root.querySelector('form').remove();
+  const status=$('leadError');
+  status.textContent='جارٍ فتح بوابة الإدارة…';
+  try{
+    const token=invite?await checked(client.rpc('hub_redeem_leadership',{p_invite:invite})):sessionStorage.getItem(sessionSlot);
+    if(!status.isConnected)return;
+    sessionStorage.setItem(sessionSlot,token);
+    const data=await checked(client.rpc('hub_leadership_session',{p_token:token}));
+    if(!status.isConnected)return;
+    renderLead(root,data.role,data.report,async()=>{
+      sessionStorage.removeItem(sessionSlot);
+      showHome();
+      await client.rpc('hub_leadership_session',{p_token:token,p_logout:true});
+    });
+    const exit=$('leadExit');
+    const verify=async()=>{
+      if(!exit.isConnected){clearInterval(timer);document.removeEventListener('visibilitychange',verify);return}
+      if(document.hidden)return;
+      const {error}=await client.rpc('hub_leadership_session',{p_token:token});
+      if(error&&exit.isConnected){
+        clearInterval(timer);
+        document.removeEventListener('visibilitychange',verify);
+        if(error.code==='42501')sessionStorage.removeItem(sessionSlot);
+        showHome();
+      }
+    };
+    const timer=setInterval(verify,60000);
+    document.addEventListener('visibilitychange',verify);
+  }catch{
+    if(!invite)sessionStorage.removeItem(sessionSlot);
+    if(status.isConnected)status.textContent='تعذّر فتح الجلسة. اطلبي رابطًا جديدًا من المعلمة إذا انتهت صلاحيته أو استُخدم مسبقًا.';
+  }
+}
 $('adminToggle').onclick=()=>{
   showHome();
   document.querySelector('header').classList.add('hidden');
@@ -970,16 +1029,7 @@ $('adminToggle').onclick=()=>{
     try{
       const report=await checked(client.rpc('hub_leadership_report',{p_role:role,p_key:login.elements.key.value.trim()}));
       if(!login.isConnected)return;
-      const panels=[
-        ['📊','تقرير الفصول',table(['الفصل','المقرر','الطالبات','التسليمات','الخطط المكتملة'],report.classes.map(c=>[c.name,c.course,c.students,c.submissions,c.completed]))],
-        ['📝','النتائج المعتمدة',table(['الطالبة','الفصل','النشاط','الدرجة','من'],report.results.map(r=>[r.full_name,r.class_name,r.title,r.score,r.max_score]))],
-        ['🎯','الخطط العلاجية والإثرائية',table(['الطالبة','الفصل','الخطة','المسار','الحالة'],report.plans.map(p=>[p.full_name,p.class_name,p.title,labels[p.kind]||p.kind,p.completed?'مكتملة':'قيد التنفيذ']))],
-        ['🏆','إنجازات الطالبات',table(['الطالبة','الفصل','التكريم','الأسبوع'],report.honors.map(h=>[h.full_name,h.class_name,h.title,h.week_start]))]
-      ];
-      root.innerHTML='<h2>لوحة '+leadNames[role]+'</h2><p>للاطلاع فقط</p>'+sectionMenu(panels)+panels.map(([,name,body])=>sectionPanel(name,body)).join('')+'<button class="action secondary" id="leadExit">تسجيل الخروج</button>';
-      installSectionBoard(root);
-      $('leadExit').onclick=showHome;
-      moveToPage();
+      renderLead(root,role,report,showHome);
     }catch{if(login.isConnected)info('leadError','تعذّر الدخول. تحققي من الحساب ومفتاح الدخول ثم أعيدي المحاولة.',true)}
     finally{btn.disabled=false}
   };
@@ -1213,4 +1263,13 @@ async function showStudentLogin(){
 }
 $('studentToggle').onclick=showStudentLogin;
 
+function openLinkedAdmin(){
+  const match=location.hash.match(/^#lead=([a-f0-9]{64})$/);
+  if(!match)return false;
+  history.replaceState(null,'',location.pathname+location.search);
+  void openLead(match[1]);
+  return true;
+}
+window.addEventListener('hashchange',openLinkedAdmin);
+if(!openLinkedAdmin()&&!familyInvite&&sessionStorage.getItem(sessionSlot))void openLead(null);
 </script></body></html>

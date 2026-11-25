@@ -43,7 +43,13 @@ jobs:
                 })
               }),
               rpc: async (name, args) => {
-                if(name==='hub_manage_leadership')return {data:{principal:false,vice_principal:false}};
+                if(name==='hub_leadership_link')return {data:args.p_action==='status'?{principal:'pending',vice_principal:'pending'}:{link:'a'.repeat(64)}};
+                if(name==='hub_redeem_leadership'){
+                  if(sessionStorage.getItem('mockUsed'))return {error:{message:'used'}};
+                  sessionStorage.setItem('mockUsed','1');
+                  return {data:'test-session'};
+                }
+                if(name==='hub_leadership_session')return {data:{role:'principal',report:{classes:[],plans:[],results:[],honors:[]}}};
                 if(name==='hub_leadership_report')return args.p_key==='test-only'?{data:{classes:[],plans:[],results:[],honors:[]}}:{error:{message:'Forbidden'}};
                 if (name === 'hub_family') return {data:{student:{name:'طالبة تجريبية'},activities:[],plans:[],results:[],honors:[],messages:[]}};
                 if (name === 'hub_login_classes') return {data:[{id:'test-class',name:'فصل وهمي',grade_level:'أول ثانوي'}]};
@@ -82,6 +88,16 @@ jobs:
                 assert.equal(await page.evaluate(()=>scrollY),0);
               };
               await home();
+              const link='http://127.0.0.1:8765/#lead='+'a'.repeat(64);
+              await page.goto(link);
+              await page.locator('#leadExit').waitFor();
+              assert.equal(await page.evaluate(()=>location.hash),'');
+              await page.reload();
+              await page.locator('#leadExit').click();
+              await home();
+              await page.goto(link);
+              await page.locator('#leadError').getByText(/تعذّر فتح الجلسة/).waitFor();
+              await page.locator('#leadHome').click();
               for(const role of ['principal','vice_principal']){
                 await page.locator('#adminToggle').click();
                 await page.locator('#leadLogin select').selectOption(role);
@@ -148,6 +164,13 @@ jobs:
                 await page.getByText('جارٍ تحميل القسم…').waitFor({state:'hidden'});
                 assert.equal(await teacherNav.isVisible(),false);
                 assert.equal(await page.evaluate(() => scrollY),0);
+                if(i===14){
+                  await page.locator('#manageLeadership [name=role]').selectOption('principal');
+                  await page.locator('#manageLeadership [name=action]').selectOption('issue');
+                  await page.locator('#manageLeadership button').click();
+                  await page.locator('#copyLead').waitFor();
+                  assert.equal(await page.locator('#leadKey').inputValue(),link);
+                }
                 if(i===1){
                   const rows=page.locator('#rosterList tr td:first-child');
                   assert.deepEqual(await rows.allTextContents(),['أمل','ريم']);
