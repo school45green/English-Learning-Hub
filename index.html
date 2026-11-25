@@ -214,13 +214,32 @@ async function teacherLoad(){
   bind('issueFamily',async ({id})=>{
     const result=await checked(client.rpc('hub_issue_family',{p_student_id:id}));
     if(!$('familyInvite'))return;
-    const url=new URL(location.href);
+    const url=new URL(location.pathname,location.origin);
     url.hash='family='+result.invite;
+    const open=document.createElement('a');
+    open.className='action';
+    open.style.cssText='display:inline-block;text-decoration:none;margin-inline-end:8px';
+    open.href=url.href;open.target='_blank';open.rel='noopener noreferrer';
+    open.textContent='فتح بوابة الأسرة';
+    const copy=document.createElement('button');
+    copy.type='button';copy.className='action secondary';copy.textContent='نسخ الرابط كاملاً';
     const link=document.createElement('input');
-    link.readOnly=true;link.value=url.href;link.setAttribute('aria-label','رابط الأسرة الخاص');
+    link.readOnly=true;link.dir='ltr';link.value=url.href;link.setAttribute('aria-label','رابط الأسرة الخاص');
+    link.onclick=()=>link.select();
+    const status=document.createElement('p');
+    status.setAttribute('role','status');
+    copy.onclick=async()=>{
+      try{
+        await navigator.clipboard.writeText(url.href);
+        status.textContent='نُسخ الرابط كاملاً.';
+      }catch{
+        link.focus();link.select();link.setSelectionRange(0,link.value.length);
+        status.textContent='الرابط محدد بالكامل. اختاري نسخ من قائمة الهاتف.';
+      }
+    };
     const pin=document.createElement('p');
     pin.textContent='الرمز الرباعي: '+result.pin;pin.dir='auto';
-    $('familyInvite').replaceChildren(link,pin);
+    $('familyInvite').replaceChildren(open,copy,link,status,pin);
     return 'صدرت الدعوة';
   },false);
   bind('revokeFamily',({id})=>checked(client.rpc('teacher_revoke_parent_pin',{p_student_id:id})).then(()=> 'أُلغيَت الدعوة'));
