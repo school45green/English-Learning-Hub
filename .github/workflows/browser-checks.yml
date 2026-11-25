@@ -1,7 +1,7 @@
 name: Browser checks
 on:
   push:
-    branches: [codex/hub-integration]
+    branches: [codex/navigation-pages]
   workflow_dispatch:
 permissions:
   contents: read
@@ -26,8 +26,18 @@ jobs:
           const mock = `
           export function createClient() {
             return {
-              auth: {getSession: async () => ({data:{session:null}})},
+              auth: {
+                getSession: async () => ({data:{session:null}}),
+                getUser: async () => ({data:{user:new URLSearchParams(location.search).has('teacher')?{id:'teacher'}:null}})
+              },
+              from: () => ({
+                select: () => ({
+                  eq: () => ({maybeSingle: async () => ({data:{role:'teacher'}})}),
+                  order: () => ({range: async () => ({data:[]})})
+                })
+              }),
               rpc: async (name, args) => {
+                if (name === 'hub_family') return {data:{student:{name:'طالبة تجريبية'},activities:[],plans:[],results:[],honors:[],messages:[]}};
                 if (name === 'hub_login_classes') return {data:[{id:'test-class',name:'فصل وهمي',grade_level:'أول ثانوي'}]};
                 if (name === 'hub_student_sign_in' && args.p_pin === '0042') return {data:{
                   token:'fictional-token',
@@ -57,6 +67,15 @@ jobs:
               await page.goto('http://127.0.0.1:8765/', {waitUntil:'load'});
               assert.equal(await page.title(), 'English Learning Hub');
               assert.equal(await page.locator('#nav button').count(), 15);
+              for (let i=0;i<15;i++) {
+                await page.locator('#nav button').nth(i).click();
+                assert.equal(await page.locator('#sectionBoard').isVisible(),false);
+                assert.equal(await page.locator('#detail').isVisible(),true);
+                assert.equal(await page.evaluate(() => scrollY),0);
+                await page.locator('#publicBack').click();
+                assert.equal(await page.locator('#sectionBoard').isVisible(),true);
+                assert.equal(await page.locator('#detail').isVisible(),false);
+              }
               await page.locator('#studentToggle').click();
               const form = page.locator('#studentCodeForm');
               await form.locator('[name=grade]').selectOption({label:'أول ثانوي'});
@@ -64,12 +83,45 @@ jobs:
               await form.locator('[name=name]').fill('طالبة تجريبية');
               await form.locator('[name=pin]').fill('0042');
               await form.locator('button').click();
+              const student = page.locator('#secureBody');
+              await student.getByRole('button',{name:/أنشطتي/}).click();
+              assert.equal(await student.locator('[data-section-board]').isVisible(),false);
               await page.getByText('Choose an answer').waitFor();
               await page.getByRole('radio',{name:'True'}).check();
               await page.getByText('حُفظت إجاباتك تلقائيًا.').waitFor();
               await page.getByRole('button',{name:'تسليم النشاط'}).click();
+              await page.getByText('تم حفظ الدرجة: 1 / 1').waitFor();
+              await student.locator('[data-section-back]').click();
+              await student.getByRole('button',{name:/درجاتي/}).click();
               await page.locator('#myResults').getByText('Practice quiz', {exact:false}).waitFor();
               assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
+              await page.goto('http://127.0.0.1:8765/?teacher=1');
+              await page.locator('#secureToggle').click();
+              const teacherNav = page.locator('#teacherNav');
+              await teacherNav.waitFor();
+              assert.equal(await teacherNav.locator('button').count(),15);
+              for (let i=0;i<15;i++) {
+                await teacherNav.locator('button').nth(i).click();
+                await page.locator('#teacherSectionTitle').waitFor();
+                await page.getByText('جارٍ تحميل القسم…').waitFor({state:'hidden'});
+                assert.equal(await teacherNav.isVisible(),false);
+                assert.equal(await page.evaluate(() => scrollY),0);
+                await page.locator('#teacherBack').click();
+                await teacherNav.waitFor();
+              }
+              await page.goto('http://127.0.0.1:8765/#family='+'a'.repeat(48));
+              await page.locator('#familyLogin input').fill('1234');
+              await page.locator('#familyLogin button').click();
+              const family=page.locator('#familyData');
+              for (let i=0;i<5;i++) {
+                await family.locator('[data-section-board] button').nth(i).click();
+                assert.equal(await family.locator('[data-section-board]').isVisible(),false);
+                assert.equal(await family.locator('[data-section-panel]:visible').count(),1);
+                assert.equal(await page.evaluate(() => scrollY),0);
+                await family.locator('[data-section-back]').click();
+              }
+              await page.locator('#publicBack').click();
+              assert.equal(await page.locator('#sectionBoard').isVisible(),true);
               assert.deepEqual(errors, []);
               console.log(name + ' browser checks passed');
               await context.close();
