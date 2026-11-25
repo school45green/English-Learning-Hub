@@ -43,7 +43,8 @@ jobs:
                 })
               }),
               rpc: async (name, args) => {
-                if(name==='hub_leadership_link')return {data:args.p_action==='status'?{principal:'pending',vice_principal:'pending'}:{link:'a'.repeat(64)}};
+                if(name==='hub_open_standing_link')return {data:'test-session'};
+                if(name==='hub_standing_link')return {data:args.p_action==='status'?{principal:'pending',vice_principal:'pending'}:{link:'a'.repeat(64)}};
                 if(name==='hub_redeem_leadership'){
                   if(sessionStorage.getItem('mockUsed'))return {error:{message:'used'}};
                   sessionStorage.setItem('mockUsed','1');
@@ -88,7 +89,7 @@ jobs:
                 assert.equal(await page.evaluate(()=>scrollY),0);
               };
               await home();
-              const link='http://127.0.0.1:8765/#lead='+'a'.repeat(64);
+              const link='http://127.0.0.1:8765/#school-lead='+'a'.repeat(64);
               await page.goto(link);
               await page.locator('#leadExit').waitFor();
               assert.equal(await page.evaluate(()=>location.hash),'');
@@ -96,8 +97,7 @@ jobs:
               await page.locator('#leadExit').click();
               await home();
               await page.goto(link);
-              await page.locator('#leadError').getByText(/تعذّر فتح الجلسة/).waitFor();
-              await page.locator('#leadHome').click();
+              await page.locator('#leadExit').click();
               for(const role of ['principal','vice_principal']){
                 await page.locator('#adminToggle').click();
                 await page.locator('#leadLogin select').selectOption(role);

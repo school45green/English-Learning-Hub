@@ -535,8 +535,8 @@ async function teacherLoad(refresh=false){
       break;
     case 13: body=reportCard+archive;break;
     case 14:
-      body=card('بوابة الإدارة', '<p id="leadStatus" role="status"></p>'+form('manageLeadership',select('role','الحساب',leadRoles)+select('action','الإجراء','<option value="issue">إصدار رابط خاص</option><option value="renew">تجديد الرابط</option><option value="disable">إلغاء الرابط والجلسة</option>'),'تنفيذ')+
-        '<p>الرابط صالح لمدة 24 ساعة ويُستخدم مرة واحدة. تستمر الجلسة 8 ساعات. تجديد الرابط أو إلغاؤه ينهي جلسة الحساب.</p><input id="leadKey" dir="ltr" aria-label="رابط الإدارة الخاص" readonly hidden><button id="copyLead" type="button" class="action secondary" hidden>نسخ الرابط</button>')+card('دخول الطالبة برمز رباعي',
+      body=card('بوابة الإدارة', '<p id="leadStatus" role="status"></p>'+form('manageLeadership',select('role','الحساب',leadRoles)+select('action','الإجراء','<option value="issue">عرض الرابط الدائم</option><option value="enable">تفعيل رابط جديد بعد الإلغاء</option><option value="disable">إلغاء الرابط والجلسة</option>'),'تنفيذ')+
+        '<p>يمكن فتح الرابط نفسه طوال العام حتى تلغيه المعلمة. شاركيه على انفراد، فمَن يملكه يستطيع الاطلاع على التقارير.</p><input id="leadKey" dir="ltr" aria-label="رابط الإدارة الخاص" readonly hidden><button id="copyLead" type="button" class="action secondary" hidden>نسخ الرابط</button>')+card('دخول الطالبة برمز رباعي',
       form('issueClassCodes',select('id','الفصل',classOptions),'إصدار رموز الفصل')+
       form('issueStudentCode',select('id','الطالبة',activeOptions),'إصدار أو إعادة تعيين رمز')+
       '<p class="muted">تظهر الرموز عند إصدارها. سلّمي كل طالبة رمزها على انفراد. تنتهي صلاحية الرمز بعد 90 يومًا. إصدار رمز للفصل يشمل الطالبات اللاتي ليس لديهن رمز ساري.</p><div id="studentInvite"></div>'+
@@ -564,8 +564,8 @@ async function teacherLoad(refresh=false){
     const status=$('leadStatus');
     const key=$('leadKey');
     const refresh=async()=>{
-      const state=await checked(client.rpc('hub_leadership_link',{p_role:null,p_action:'status'}));
-      status.textContent=['principal','vice_principal'].map(r=>leadNames[r]+' — '+({active:'جلسة نشطة',pending:'بانتظار التفعيل',inactive:'غير مفعّل'}[state[r]]||'غير مفعّل')).join(' | ');
+      const state=await checked(client.rpc('hub_standing_link',{p_role:null,p_action:'status'}));
+      status.textContent=['principal','vice_principal'].map(r=>leadNames[r]+' — '+({active:'رابط مفعّل',pending:'بانتظار التفعيل',inactive:'غير مفعّل'}[state[r]]||'غير مفعّل')).join(' | ');
     };
     refresh().catch(()=>status.textContent='تعذّر تحميل حالة الحسابين');
     const copy=$('copyLead');
@@ -577,13 +577,14 @@ async function teacherLoad(refresh=false){
     };
     bind('manageLeadership',async({role,action})=>{
       clear();
-      const result=await checked(client.rpc('hub_leadership_link',{p_role:role,p_action:action}));
+      const result=await checked(client.rpc('hub_standing_link',{p_role:role,p_action:action}));
+      if(!$('manageLeadership')||$('manageLeadership').elements.role.value!==role||$('manageLeadership').elements.action.value!==action)return;
       if(result.link){
-        key.value=new URL(location.pathname,location.origin).href+'#lead='+result.link;
+        key.value=new URL(location.pathname,location.origin).href+'#school-lead='+result.link;
         key.hidden=false;copy.hidden=false;
       }
       await refresh();
-      return action!=='disable'?'صدر رابط دخول '+leadNames[role]:'عُطّل حساب '+leadNames[role];
+      return action!=='disable'?'الرابط جاهز للنسخ — '+leadNames[role]:'عُطّل حساب '+leadNames[role];
     },false);
   }
   const manageClass=(id,name,grade,archive=null)=>checked(client.rpc('hub_manage_class',
@@ -974,14 +975,14 @@ function renderLead(root,role,report,logout){
       moveToPage();
 }
 const sessionSlot='EnglishLearningHub.leadSession';
-async function openLead(invite){
+async function openLead(invite,standing=false){
   $('adminToggle').click();
   const root=$('detail');
   root.querySelector('form').remove();
   const status=$('leadError');
   status.textContent='جارٍ فتح بوابة الإدارة…';
   try{
-    const token=invite?await checked(client.rpc('hub_redeem_leadership',{p_invite:invite})):sessionStorage.getItem(sessionSlot);
+    const token=invite?await checked(client.rpc(standing?'hub_open_standing_link':'hub_redeem_leadership',{p_invite:invite})):sessionStorage.getItem(sessionSlot);
     if(!status.isConnected)return;
     sessionStorage.setItem(sessionSlot,token);
     const data=await checked(client.rpc('hub_leadership_session',{p_token:token}));
@@ -1007,7 +1008,7 @@ async function openLead(invite){
     document.addEventListener('visibilitychange',verify);
   }catch{
     if(!invite)sessionStorage.removeItem(sessionSlot);
-    if(status.isConnected)status.textContent='تعذّر فتح الجلسة. اطلبي رابطًا جديدًا من المعلمة إذا انتهت صلاحيته أو استُخدم مسبقًا.';
+    if(status.isConnected)status.textContent='تعذّر فتح الجلسة. افتحي الرابط الذي أرسلته المعلمة، أو تحققي معها من حالة تفعيله.';
   }
 }
 $('adminToggle').onclick=()=>{
@@ -1264,10 +1265,10 @@ async function showStudentLogin(){
 $('studentToggle').onclick=showStudentLogin;
 
 function openLinkedAdmin(){
-  const match=location.hash.match(/^#lead=([a-f0-9]{64})$/);
+  const match=location.hash.match(/^#(school-lead|lead)=([a-f0-9]{64})$/);
   if(!match)return false;
   history.replaceState(null,'',location.pathname+location.search);
-  void openLead(match[1]);
+  void openLead(match[2],match[1]==='school-lead');
   return true;
 }
 window.addEventListener('hashchange',openLinkedAdmin);
