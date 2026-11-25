@@ -1,0 +1,80 @@
+name: Browser checks
+on:
+  push:
+    branches: [codex/hub-integration]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install testing browser
+        run: |
+          npm install --prefix "$RUNNER_TEMP/hub-browser" playwright@1.58.2
+          "$RUNNER_TEMP/hub-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Test desktop and mobile against fictional records
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > "$RUNNER_TEMP/hub-server.log" 2>&1 &
+          cd "$RUNNER_TEMP/hub-browser"
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {chromium,devices} from 'playwright';
+
+          const mock = `
+          export function createClient() {
+            return {
+              auth: {getSession: async () => ({data:{session:null}})},
+              rpc: async (name, args) => {
+                if (name === 'hub_login_classes') return {data:[{id:'test-class',name:'فصل وهمي',grade_level:'أول ثانوي'}]};
+                if (name === 'hub_student_sign_in' && args.p_pin === '0042') return {data:{
+                  token:'fictional-token',
+                  dashboard:{student:{name:'طالبة تجريبية'},activities:[{id:'test',title:'Practice quiz',questions:[{id:'q1',prompt:'Choose an answer',choices:['True','False']}],attempts_used:0,max_attempts:1}],results:[]}
+                }};
+                if (name === 'hub_student_learning') return {data:{plans:[],honors:[]}};
+                if (name === 'hub_save_activity_draft') return {data:1};
+                if (name === 'hub_student_session' && args.p_activity) return {data:{score:1,max_score:1}};
+                if (name === 'hub_student_session') return {data:{student:{name:'طالبة تجريبية'},activities:[],results:[{title:'Practice quiz',score:1,max_score:1}]}};
+                return {data:null};
+              }
+            };
+          }`;
+
+          const browser = await chromium.launch();
+          try {
+            for (const [name, config] of [
+              ['desktop', {viewport:{width:1440,height:900}}],
+              ['mobile', devices['Pixel 7']]
+            ]) {
+              const context = await browser.newContext(config);
+              const page = await context.newPage();
+              const errors = [];
+              page.on('pageerror', error => errors.push(error.message));
+              await page.route('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@*/+esm', route =>
+                route.fulfill({contentType:'application/javascript',headers:{'access-control-allow-origin':'*'},body:mock}));
+              await page.goto('http://127.0.0.1:8765/', {waitUntil:'load'});
+              assert.equal(await page.title(), 'English Learning Hub');
+              assert.equal(await page.locator('nav button').count(), 15);
+              await page.locator('#studentToggle').click();
+              const form = page.locator('#studentCodeForm');
+              await form.locator('[name=grade]').selectOption({label:'أول ثانوي'});
+              await form.locator('[name=class_id]').selectOption('test-class');
+              await form.locator('[name=name]').fill('طالبة تجريبية');
+              await form.locator('[name=pin]').fill('0042');
+              await form.locator('button').click();
+              await page.getByText('Choose an answer').waitFor();
+              await page.getByRole('radio',{name:'True'}).check();
+              await page.getByText('حُفظت إجاباتك تلقائيًا.').waitFor();
+              await page.getByRole('button',{name:'تسليم النشاط'}).click();
+              await page.locator('#myResults').getByText('Practice quiz', {exact:false}).waitFor();
+              assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
+              assert.deepEqual(errors, []);
+              console.log(name + ' browser checks passed');
+              await context.close();
+            }
+          } finally {
+            await browser.close();
+          }
+          JS
