@@ -113,14 +113,144 @@ function displayInvite(target,kind,result){
     pin.textContent='الرمز الرباعي: '+result.pin;pin.dir='auto';
     $(target).replaceChildren(open,copy,link,status,pin);
 }
+function learningPairs(value,skill,dayForIndex){
+  return value.trim().split(/\r?\n/).filter(line=>line.trim()).map((line,i)=>{
+    const parts=line.split('|').map(part=>part.trim());
+    if(parts.length!==2||!parts[0]||!parts[1])throw new Error('اكتبي السؤال والإجابة في كل سطر وافصلي بينهما بالرمز |');
+    return {skill,day:dayForIndex(i),prompt:parts[0],expected:parts[1]};
+  });
+}
+function learningTasks(data,remedial){
+  if(remedial){
+    const words=learningPairs(data.vocabulary,'vocabulary',i=>Math.floor(i/4)+1);
+    const grammar=learningPairs(data.grammar,'grammar',i=>4+i);
+    if(words.length!==12||![2,3].includes(grammar.length))throw new Error('أضيفي 12 كلمة وتمرينَي قواعد أو ثلاثة.');
+    return [...words,...grammar];
+  }
+  if(['reading','listening'].includes(data.mode))return learningPairs(data.practice,data.mode,()=>1);
+  return [{skill:data.mode,day:1,prompt:data.practice.trim(),expected:null}];
+}
+async function readLearningFile(file){
+  if(!file?.size)return {};
+  if(file.size>1572864)throw new Error('الحد الأقصى للمرفق 1.5 ميغابايت.');
+  const extensions={pdf:'application/pdf',mp3:'audio/mpeg',ogg:'audio/ogg',wav:'audio/wav',m4a:'audio/mp4',
+    webm:'audio/webm',jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',mp4:'video/mp4'};
+  const mime=extensions[file.name.split('.').pop().toLowerCase()];
+  if(!mime)throw new Error('صيغة المرفق غير مدعومة.');
+  const body=await new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(String(reader.result).split(',')[1]);
+    reader.onerror=()=>reject(new Error('تعذّر قراءة الملف.'));
+    reader.readAsDataURL(file);
+  });
+  return {p_mime:mime,p_base64:body};
+}
+const learningFileTypes={'application/pdf':'pdf','audio/mpeg':'mp3','audio/ogg':'ogg','audio/wav':'wav','audio/mp4':'m4a',
+  'audio/webm':'webm','image/jpeg':'jpg','image/png':'png','video/mp4':'mp4'};
+async function downloadLearningMedia(id,code){
+  const file=await checked(client.rpc('hub_download_learning_media',{p_media:id,p_token:code?.token??null}));
+  if(!file||!learningFileTypes[file.mime])throw new Error('المرفق غير متاح.');
+  const bytes=Uint8Array.from(atob(file.body),x=>x.charCodeAt(0));
+  download('English-Learning-Hub.'+learningFileTypes[file.mime],new Blob([bytes],{type:'application/octet-stream'}),'application/octet-stream');
+}
+function learningMediaButton(id,code){
+  const control=document.createElement('button');
+  control.className='action secondary';
+  control.type='button';
+  control.textContent='تنزيل المرفق';
+  control.onclick=async()=>{
+    control.disabled=true;
+    try{await downloadLearningMedia(id,code)}
+    catch(error){control.textContent=error.message}
+    finally{control.disabled=false}
+  };
+  return control;
+}
+async function renderLearningTasks(code,version){
+  const target=$('myLearning');
+  if(!target)return;
+  try{
+    const data=await checked(client.rpc('hub_student_learning',{p_token:code?.token??null}));
+    if(version!==viewVersion||!target.isConnected||!data)return;
+    for(const plan of data.plans){
+      const section=document.createElement('section');
+      section.className='secure-card';
+      const finished=plan.tasks.filter(task=>task.reviewed).length;
+      section.innerHTML='<h3>'+safe(plan.title)+'</h3><p>الوحدة '+safe(plan.unit)+' · '+safe(plan.skill)+' · تم تقييم '+finished+' من '+plan.tasks.length+'</p>';
+      const daily=new Map();
+      for(const task of plan.tasks){
+        if(!daily.has(task.day))daily.set(task.day,[]);
+        daily.get(task.day).push(task);
+      }
+      for(const [day,tasks] of daily){
+        const label=document.createElement('h4');
+        label.textContent='اليوم '+day;
+        section.append(label);
+        for(const task of tasks){
+          const question=document.createElement('div');
+          question.className='secure-card';
+          const prompt=document.createElement('p');
+          prompt.lang='en';prompt.dir='auto';prompt.textContent=task.prompt;
+          question.append(prompt);
+          if(task.submitted){
+            const result=document.createElement('p');
+            result.textContent=task.reviewed?'النتيجة '+task.score+' / 100':'سُلّم وبانتظار المراجعة';
+            question.append(result);
+            if(task.feedback){
+              const feedback=document.createElement('p');
+              feedback.textContent=task.feedback;
+              question.append(feedback);
+            }
+            if(task.media)question.append(learningMediaButton(task.media,code));
+          }else{
+            const answer=document.createElement('form');
+            const speaking=task.skill==='speaking';
+            const writing=task.skill==='writing';
+            answer.innerHTML=(speaking?'':('<label>الإجابة<textarea name="response" lang="en" dir="auto" maxlength="6000" '+(writing?'':'required')+'></textarea></label>'))+
+              (speaking||writing?'<label>'+ (speaking?'التسجيل الصوتي':'ملف PDF اختياري')+'<input type="file" name="upload" accept="'+(speaking?'.mp3,.ogg,.wav,.m4a,.webm':'.pdf')+'" '+(speaking?'required':'')+'></label>':'')+
+              button('تسليم')+'<p role="status"></p>';
+            const submit=answer.querySelector('button');
+            const status=answer.querySelector('[role="status"]');
+            answer.onsubmit=async event=>{
+              event.preventDefault();
+              const fields=new FormData(answer);
+              submit.disabled=true;
+              try{
+                const media=await readLearningFile(fields.get('upload'));
+                const result=await checked(client.rpc('hub_submit_learning_task',{p_token:code?.token??null,p_task:task.id,
+                  p_response:fields.get('response'),...media}));
+                if(!result)throw new Error('انتهت جلسة الدخول.');
+                status.textContent=result.reviewed?'حُفظت الدرجة: '+result.score+' / 100':'تم تسليم المشاركة.';
+                if(version===viewVersion)await studentLoad(code);
+              }catch(error){status.textContent=error.message;submit.disabled=false}
+            };
+            question.append(answer);
+          }
+          section.append(question);
+        }
+      }
+      target.append(section);
+    }
+    const board=$('myHonorDetails');
+    if(board){
+      board.innerHTML=table(['القسم','العنوان','الوصف','تاريخ الأسبوع'],data.honors.map(h=>[sections[h.category]?.[1],h.title,h.description,h.week_start]));
+      for(const honor of data.honors.filter(h=>h.media||h.legacy&&!code)){
+        const row=document.createElement('p');
+        row.append(document.createTextNode(honor.title+' '),honor.media?learningMediaButton(honor.media,code):resourceButton('honors',honor.id));
+        board.append(row);
+      }
+    }
+  }catch(error){if(target.isConnected)target.textContent='تعذّر تحميل تدريبات الخطط.'}
+}
+
 async function teacherLoad(){
   const version=viewVersion;
   const [classes,students,activities,submissions,plans,honors,inbox,archives]=await Promise.all([
     rows('school_classes','id,name,course,grade_level'),rows('students','id,full_name,class_id,active'),
     rows('activities','id,title,kind,course,unit_no,skill,max_score,max_attempts,published,activity_targets(class_id)'),
     rows('submissions','id,student_id,activity_id,score,submitted_at,status,attempt'),
-    rows('hub_plans','id,student_id,kind,title,instructions,due_on,completed'),
-    rows('honors','id,student_id,category,title,description,week_start'),
+    rows('hub_plans','id,student_id,kind,title,instructions,due_on,completed,unit_no,skill'),
+    rows('honors','id,student_id,category,title,description,week_start,archived_at'),
     rows('parent_messages','id,student_id,message,teacher_reply,created_at'),
     rows('semester_archives','id,label,archived_at')
   ]);
@@ -145,13 +275,34 @@ async function teacherLoad(){
   const archive=card('أرشيف الفصل الدراسي',form('newArchive',fields('label','اسم الفصل الدراسي','maxlength="100"'),'حفظ لقطة من التقرير')+
     table(['الاسم','التاريخ'],archives.map(x=>[x.label,x.archived_at]))+
     form('getArchive',select('id','الأرشيف',options(archives,x=>x.label)),'تنزيل الأرشيف'));
-  const plansSection=kind=>card(kind==='remedial'?'الخطط العلاجية':'الخطط الإثرائية',
-    form('newPlan',select('student_id','الطالبة',activeOptions)+fields('title','العنوان','maxlength="160"')+fields('due_on','الموعد','type="date" value="'+today+'"')+'<label>التعليمات <textarea name="instructions" required maxlength="4000"></textarea></label>')+
-    table(['الطالبة','الخطة','الموعد','الحالة'],plans.filter(x=>x.kind===kind).map(x=>[studentName(x.student_id),x.title,x.due_on,x.completed?'مكتملة':'قيد التنفيذ']))+
-    form('completePlan',select('id','الخطة',options(plans.filter(x=>x.kind===kind&&!x.completed),x=>studentName(x.student_id)+' — '+x.title)),'تسجيل الإنجاز'));
+  const plansSection=kind=>{
+    const remedial=kind==='remedial';
+    const taskFields=remedial?
+      '<label>المفردات<textarea name="vocabulary" lang="en" dir="ltr" required maxlength="6000" placeholder="word | meaning"></textarea></label>'+
+      '<label>تمارين القواعد<textarea name="grammar" lang="en" dir="ltr" required maxlength="3600" placeholder="question | answer"></textarea></label>'+
+      '<p class="muted">أضيفي 12 كلمة، كلمة ومعناها في كل سطر. تُوزّع أربع كلمات يوميًا على ثلاثة أيام، ثم تمرين قواعد في كل يوم من اليومين أو الأيام الثلاثة التالية.</p>':
+      select('mode','نوع التدريب','<option value="reading">قراءة</option><option value="listening">استماع</option><option value="speaking">تحدث</option><option value="writing">كتابة</option>')+
+      '<label>المحتوى الإنجليزي<textarea name="practice" lang="en" dir="auto" required maxlength="6000"></textarea></label>'+
+      '<p class="muted">في القراءة والاستماع، اكتبي كل سؤال وإجابته في سطر بينهما |. في الكتابة والتحدث اكتبي المهمة التي ستراجعينها بعد التسليم.</p>';
+    return card(remedial?'الخطط العلاجية':'الخطط الإثرائية',
+      form('newPlan','<label>طالبة محددة<select name="student_id"><option value="">اختاري طالبة</option>'+activeOptions+'</select></label>'+
+        '<label>أو فصل كامل<select name="class_id"><option value="">اختاري فصلًا</option>'+classOptions+'</select></label>'+
+        fields('title','العنوان','maxlength="160"')+fields('due_on','الموعد','type="date" value="'+today+'"')+
+        fields('unit','الوحدة','type="number" min="1" max="20"')+fields('skill','المهارة','maxlength="80"')+
+        '<label>التعليمات <textarea name="instructions" required maxlength="4000"></textarea></label>'+taskFields,'إسناد الخطة')+
+      table(['الطالبة','الفصل','الخطة','الوحدة','المهارة','الموعد','الحالة'],plans.filter(x=>x.kind===kind).map(x=>[
+        studentName(x.student_id),className(students.find(s=>s.id===x.student_id)?.class_id),x.title,x.unit_no,x.skill,x.due_on,x.completed?'مكتملة':'قيد التنفيذ']))+
+      form('completePlan',select('id','الخطة',options(plans.filter(x=>x.kind===kind&&!x.completed),x=>studentName(x.student_id)+' — '+x.title)),'تسجيل الإنجاز')+
+      '<div id="learningReviews"><p>جارٍ تحميل سجل التقييم.</p></div>');
+  };
+  const honorItems=honors.filter(x=>x.category===current);
   const honorsSection=()=>card(sections[current][1],
     form('newHonor',select('student_id','الطالبة',activeOptions)+fields('title','العنوان','maxlength="160"')+fields('week_start','تاريخ الأسبوع','type="date" value="'+today+'"')+'<label>وصف الإنجاز أو نص العمل <textarea name="description" maxlength="4000"></textarea></label>','اعتماد وإتاحة للطالبة والأسرة')+
-    table(['الطالبة','العنوان','التاريخ','العمل'],honors.filter(x=>x.category===current).map(x=>[studentName(x.student_id),x.title,x.week_start,x.description])));
+    '<label>تصفية حسب الفصل<select id="honorClass"><option value="">كل الفصول</option>'+classOptions+'</select></label><div id="honorRows"></div>'+
+    form('archiveHonor',select('id','التكريم',options(honorItems.filter(x=>!x.archived_at),x=>studentName(x.student_id)+' — '+x.title)),'أرشفة التكريم')+
+    form('restoreHonor',select('id','التكريم المؤرشف',options(honorItems.filter(x=>x.archived_at),x=>studentName(x.student_id)+' — '+x.title)),'استعادة التكريم')+
+    form('attachHonorMedia',select('id','التكريم',options(honorItems.filter(x=>!x.archived_at),x=>studentName(x.student_id)+' — '+x.title))+
+      fields('file','صورة مصرح بها أو فيديو MP4 قصير (حتى 1.5 ميغابايت)','type="file" accept=".jpg,.jpeg,.png,.mp4"'),'رفع المرفق'));
   let body='';
   switch(current){
     case 0:
@@ -249,7 +400,33 @@ async function teacherLoad(){
     return checked(client.rpc('hub_create_activity',{p_title:data.title,p_class:data.classId,p_kind:data.kind,p_unit:Number(data.unit),p_skill:data.skill,p_attempts:Number(data.attempts),p_questions:questions})).then(()=> 'حُفظ الاختبار كمسودة');
   });
   bind('publishActivity',({id,published})=>checked(client.from('activities').update({published:published==='true'}).eq('id',id)));
-  bind('newPlan',data=>checked(client.from('hub_plans').insert({...data,kind:current===4?'remedial':'enrichment'})));
+  bind('newPlan',async data=>{
+    if(Boolean(data.class_id)===Boolean(data.student_id))throw new Error('اختاري فصلًا كاملًا أو طالبة واحدة.');
+    const count=await checked(client.rpc('hub_assign_learning_plan',{p_class:data.class_id||null,p_student:data.student_id||null,
+      p_kind:current===4?'remedial':'enrichment',p_title:data.title,p_instructions:data.instructions,p_due:data.due_on,
+      p_unit:Number(data.unit),p_skill:data.skill,p_tasks:learningTasks(data,current===4)}));
+    return 'أُسندت الخطة لعدد '+count+' من الطالبات.';
+  });
+  if($('learningReviews'))void loadLearningReviews(current===4?'remedial':'enrichment',studentName,version);
+  if($('honorRows')){
+    const renderHonors=()=>{
+      const classId=$('honorClass').value;
+      const displayed=honorItems.filter(h=>!classId||students.find(s=>s.id===h.student_id)?.class_id===classId);
+      const rowsFor=items=>items.map(h=>[studentName(h.student_id),className(students.find(s=>s.id===h.student_id)?.class_id),h.title,h.week_start,h.description]);
+      const columns=['الطالبة','الفصل','العنوان','الأسبوع','العمل'];
+      $('honorRows').innerHTML='<h4>التكريمات المعتمدة</h4>'+table(columns,rowsFor(displayed.filter(h=>!h.archived_at)))+
+        '<h4>الأرشيف</h4>'+table(columns,rowsFor(displayed.filter(h=>h.archived_at)));
+    };
+    $('honorClass').onchange=renderHonors;
+    renderHonors();
+  }
+  bind('archiveHonor',({id})=>checked(client.from('honors').update({archived_at:new Date().toISOString()}).eq('id',id)));
+  bind('restoreHonor',({id})=>checked(client.from('honors').update({archived_at:null}).eq('id',id)));
+  bind('attachHonorMedia',async ({id,file})=>{
+    const uploaded=await readLearningFile(file);
+    if(!uploaded.p_base64)throw new Error('اختاري ملفًا.');
+    await checked(client.rpc('hub_attach_honor',{p_honor:id,...uploaded}));
+  });
   bind('completePlan',({id})=>checked(client.from('hub_plans').update({completed:true}).eq('id',id)));
   bind('newHonor',data=>checked(client.from('honors').insert({...data,category:current,public_visible:false})));
   bind('issueFamily',async ({id})=>{
@@ -285,6 +462,44 @@ async function teacherLoad(){
   bind('revokeStudentCode',({id})=>checked(client.rpc('hub_revoke_student_code',{p_student:id})).then(()=> 'أُلغي رمز الطالبة'));
   bind('linkStudent',({id,email})=>checked(client.rpc('hub_link_student',{p_student_id:id,p_email:email})));
 }
+async function loadLearningReviews(kind,studentName,version){
+  const root=$('learningReviews');
+  try{
+    const reviews=[];
+    for(let from=0;;from+=500){
+      const batch=await checked(client.rpc('hub_learning_reviews',{p_kind:kind}).range(from,from+499));
+      if(version!==viewVersion||!root.isConnected)return;
+      reviews.push(...batch);
+      if(batch.length<500)break;
+    }
+    if(version!==viewVersion||!root.isConnected)return;
+    const manual=reviews.filter(x=>['writing','speaking'].includes(x.skill));
+    root.innerHTML=card('سجل التقييم وتحسّن الأداء',
+      table(['الطالبة','الخطة','المهارة','السؤال','النتيجة','ملحوظة'],reviews.map(x=>[
+        studentName(x.student_id),x.title,labels[x.skill]||x.skill,x.prompt,x.score==null?'بانتظار المراجعة':x.score+' / 100',x.feedback]))+
+      (manual.length?form('reviewLearning',select('task','المشاركة',options(manual,x=>studentName(x.student_id)+' — '+x.title+' — '+x.prompt.slice(0,50)))+
+        '<div id="reviewLearningResponse"></div>'+fields('score','الدرجة من 100','type="number" min="0" max="100"')+
+        '<label>التغذية الراجعة<textarea name="feedback" maxlength="1500"></textarea></label>','اعتماد التقييم'):''));
+    if(!$('reviewLearning'))return;
+    const selectTask=$('reviewLearning').elements.task;
+    selectTask.onchange=()=>{
+      const item=manual.find(x=>x.id===selectTask.value);
+      const response=$('reviewLearningResponse');
+      response.replaceChildren();
+      if(!item)return;
+      const prompt=document.createElement('p');
+      prompt.textContent=item.prompt;
+      const answer=document.createElement('p');
+      answer.textContent=item.response||'';
+      response.append(prompt,answer);
+      if(item.media)response.append(learningMediaButton(item.media,null));
+      $('reviewLearning').elements.score.value=item.score??'';
+      $('reviewLearning').elements.feedback.value=item.feedback??'';
+    };
+    bind('reviewLearning',({task,score,feedback})=>checked(client.rpc('hub_review_learning_task',{
+      p_task:task,p_score:Number(score),p_feedback:feedback})));
+  }catch(error){if(root.isConnected)root.textContent='تعذّر تحميل سجل التقييم.'}
+}
 async function adminLoad(){
   const summary=await checked(client.rpc('hub_admin_summary'));
   $('secureTitle').textContent='ملخص الإدارة';
@@ -297,18 +512,14 @@ async function studentLoad(code=null,dashboard=null){
  if(error)throw error;
  if(version!==viewVersion)return;
  if(!data)throw new Error('تعذّر الدخول. تحققي من الرابط والرمز أو أعيدي المحاولة لاحقًا.');
-const student=data?.student||{};const activities=data?.activities||[];const results=data?.results||[];$('secureTitle').textContent='🌸 بوابة الطالبة';$('secureBody').innerHTML=`<div class="secure-card"><h3>مرحبًا ${safe(student.full_name||student.name||'بكِ')}</h3><p>${safe(student.class_name||'')}</p></div><h3>أنشطتي</h3><div id="myActivities"></div><h3>درجاتي</h3><div id="myResults"></div>`+
+const student=data?.student||{};const activities=data?.activities||[];const results=data?.results||[];$('secureTitle').textContent='🌸 بوابة الطالبة';$('secureBody').innerHTML=`<div class="secure-card"><h3>مرحبًا ${safe(student.full_name||student.name||'بكِ')}</h3><p>${safe(student.class_name||'')}</p></div><h3>أنشطتي</h3><div id="myActivities"></div><h3>درجاتي</h3><div id="myResults"></div><div id="myLearning"></div>`+
 card('مكتبة الوحدات',table(['الوحدة','النشاط','المهارة'],[...activities].sort((a,b)=>(a.unit??0)-(b.unit??0)).map(a=>[a.unit,a.title,a.skill])))+
 ['remedial','enrichment'].map(kind=>card(kind==='remedial'?'خططي العلاجية':'خططي الإثرائية',
 table(['الخطة','التعليمات','الموعد','الحالة'],(data.plans||[]).filter(x=>x.kind===kind).map(x=>[x.title,x.instructions,x.due_on,x.completed?'مكتملة':'قيد التنفيذ'])))).join('')+
-card('التكريم والأعمال المعتمدة',table(['القسم','العنوان','الوصف','تاريخ الأسبوع'],(data.honors||[]).map(x=>[sections[x.category]?.[1],x.title,x.description,x.week_start])));
-for(const h of (data.honors||[]).filter(x=>x.resource&&!code)){
-  const box=document.createElement('div');
-  box.append(document.createTextNode(h.title+' '),resourceButton('honors',h.id));
-  $('secureBody').append(box);
-}
+card('التكريم والأعمال المعتمدة','<div id="myHonorDetails">جارٍ التحميل…</div>');
 for(const a of activities){const box=document.createElement('div');box.className='secure-card';const title=document.createElement('h3');title.textContent=a.title||'نشاط';box.append(title);if(a.resource&&!code)box.append(resourceButton('units',a.id));const form=document.createElement('form');const questions=Array.isArray(a.questions)?a.questions:(Array.isArray(a.answer_key?.questions)?a.answer_key.questions:[]);if(a.attempts_used>=a.max_attempts){box.append('اكتملت المحاولات المتاحة.');$('myActivities').append(box);continue}if(!questions.length){const p=document.createElement('p');p.textContent='لا توجد أسئلة متاحة لهذا النشاط حاليًا.';box.append(p);$('myActivities').append(box);continue}questions.forEach((q,i)=>{const field=document.createElement('fieldset');const legend=document.createElement('legend');legend.textContent=q.question||q.prompt||'Question '+(i+1);field.append(legend);(q.options||q.choices||[]).forEach((opt,j)=>{const lab=document.createElement('label');lab.className='quiz-option';const input=document.createElement('input');input.type='radio';input.name='q'+i;input.value=String(j);input.required=true;lab.append(input,document.createTextNode(' '+(typeof opt==='string'?opt:opt.text||String(opt))));field.append(lab)});form.append(field)});const btn=document.createElement('button');btn.className='action';btn.textContent='تسليم النشاط';form.append(btn);const status=document.createElement('p');form.onsubmit=async e=>{e.preventDefault();const fd=new FormData(form);const answers=Object.fromEntries(questions.map((q,i)=>[q.id,String((q.options||q.choices||[])[Number(fd.get('q'+i))]) ]));btn.disabled=true;const {data:res,error:err}=await request('student_submit_quiz',code?{p_activity:a.id,p_answers:answers}:{p_activity_id:a.id,p_answers:answers});if(version!==viewVersion)return;if(err||!res){status.textContent=err?'تعذّر التسليم: '+err.message:'انتهت صلاحية الدخول. أعيدي فتح رابط الدعوة.';btn.disabled=false;return}status.textContent='تم حفظ الدرجة: '+res.score+' / '+res.max_score;await studentLoad(code).catch(error=>{if(version===viewVersion)box.append(document.createTextNode(error.message))})};box.append(form,status);$('myActivities').append(box)}
 $('myResults').innerHTML=results.length?results.map(r=>`<p>${safe(r.activity||r.title||'نشاط')} — <b>${safe(r.score)} / ${safe(r.max_score)}</b></p>`).join(''):'<p>لا توجد درجات مسجلة.</p>';
+void renderLearningTasks(code,version);
 }
 let familyInvite='';
 function readFamilyInvite(){
