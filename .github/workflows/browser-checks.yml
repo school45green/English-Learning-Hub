@@ -31,10 +31,15 @@ jobs:
                 getSession: async () => ({data:{session:null}}),
                 getUser: async () => ({data:{user:new URLSearchParams(location.search).has('teacher')?{id:'teacher'}:null}})
               },
-              from: () => ({
+              storage:{from:()=>({list:async()=>({data:[{name:'resource'}]})})},
+              from: (table) => ({
                 select: () => ({
                   eq: () => ({maybeSingle: async () => ({data:{role:'teacher'}})}),
-                  order: () => ({range: async () => ({data:[]})})
+                  order: () => ({range: async () => ({data:({
+                    school_classes:[{id:'c1',name:'Class A',course:'Mega Goal 1'},{id:'c2',name:'Class B',course:'Mega Goal 3'}],
+                    students:[{id:'s1',class_id:'c1',full_name:'ريم'},{id:'s2',class_id:'c1',full_name:'أمل'},{id:'s3',class_id:'c2',full_name:'هند'}],
+                    activities:[{id:'act',title:'Reading practice',course:'Mega Goal 1',unit_no:2,skill:'Reading',activity_targets:[],activity_student_targets:[]}]
+                  })[table]||[]})})
                 })
               }),
               rpc: async (name, args) => {
@@ -85,6 +90,8 @@ jobs:
                 assert.equal(await page.locator('#sectionBoard').isVisible(),false);
                 assert.equal(await page.locator('#detail').isVisible(),true);
                 assert.equal(await page.evaluate(() => scrollY),0);
+                assert.equal(await page.locator('#detail input,#detail select,#detail textarea,#detail form').count(),0);
+                assert.equal(await page.locator('#detail button').count(),1);
                 await page.locator('#publicBack').click();
                 assert.equal(await page.locator('#sectionBoard').isVisible(),true);
                 assert.equal(await page.locator('#detail').isVisible(),false);
@@ -122,6 +129,19 @@ jobs:
                 await page.getByText('جارٍ تحميل القسم…').waitFor({state:'hidden'});
                 assert.equal(await teacherNav.isVisible(),false);
                 assert.equal(await page.evaluate(() => scrollY),0);
+                if(i===1){
+                  const rows=page.locator('#rosterList tr td:first-child');
+                  assert.deepEqual(await rows.allTextContents(),['أمل','ريم']);
+                  await page.locator('#rosterSearch').fill('ريم');
+                  assert.deepEqual(await rows.allTextContents(),['ريم']);
+                  await page.locator('#exportRoster [name=id]').selectOption('c2');
+                  assert.deepEqual(await rows.allTextContents(),['هند']);
+                }
+                if(i===3){
+                  for(const name of ['Mega Goal 1','Unit 2','Reading','Reading practice'])
+                    await page.locator('summary').getByText(name,{exact:true}).or(page.locator('summary').filter({hasText:new RegExp('^'+name+'$')})).first().click();
+                  await page.getByRole('button',{name:'تنزيل المرفق'}).waitFor();
+                }
                 await page.locator('#teacherBack').click();
                 await teacherNav.waitFor();
               }
