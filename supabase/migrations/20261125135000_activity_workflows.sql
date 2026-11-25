@@ -245,4 +245,3 @@ begin
     'honors',(select coalesce(jsonb_agg(x order by x.week_start desc),'[]') from (
       select title,week_start from public.honors where student_id=v_access.student_id and archived_at is null order by week_start desc limit 50) x));
 end $$;
-
