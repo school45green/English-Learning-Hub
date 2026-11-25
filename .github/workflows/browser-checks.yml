@@ -43,6 +43,8 @@ jobs:
                 })
               }),
               rpc: async (name, args) => {
+                if(name==='hub_manage_leadership')return {data:{principal:false,vice_principal:false}};
+                if(name==='hub_leadership_report')return args.p_key==='test-only'?{data:{classes:[],plans:[],results:[],honors:[]}}:{error:{message:'Forbidden'}};
                 if (name === 'hub_family') return {data:{student:{name:'طالبة تجريبية'},activities:[],plans:[],results:[],honors:[],messages:[]}};
                 if (name === 'hub_login_classes') return {data:[{id:'test-class',name:'فصل وهمي',grade_level:'أول ثانوي'}]};
                 if (name === 'hub_student_sign_in' && args.p_pin === '0042') return {data:{
@@ -80,6 +82,23 @@ jobs:
                 assert.equal(await page.evaluate(()=>scrollY),0);
               };
               await home();
+              for(const role of ['principal','vice_principal']){
+                await page.locator('#adminToggle').click();
+                await page.locator('#leadLogin select').selectOption(role);
+                await page.locator('#leadLogin input').fill('incorrect');
+                await page.locator('#leadLogin button').click();
+                await page.locator('#leadError').getByText(/تعذّر الدخول/).waitFor();
+                await page.locator('#leadLogin input').fill('test-only');
+                await page.locator('#leadLogin button').click();
+                await page.locator('#leadExit').waitFor();
+                for(let i=0;i<4;i++){
+                  await page.locator('#detail [data-section]').nth(i).click();
+                  assert.equal(await page.locator('#detail form').count(),0);
+                  await page.locator('#detail [data-section-back]').click();
+                }
+                await page.locator('#leadExit').click();
+                await home();
+              }
               await page.locator('#familyToggle').click();
               await page.locator('#familyHome').click();
               await home();

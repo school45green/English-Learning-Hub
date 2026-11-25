@@ -5,7 +5,7 @@
 .report-bar meter{width:100%;accent-color:var(--green,#346752)}
 .report-chart:empty{display:none}
 header.hidden+main.wrap{margin-top:16px}.section-back{margin-block-end:12px}.section-back[hidden], [data-section-panel][hidden]{display:none}
-</style></head><body><header><div style="font-size:34px">📖 ✨ 👑</div><h1>English Learning Hub</h1><p>الثانوية الخامسة والأربعون<br><span id="subtitle">المعلمة حكيمة المطيري</span></p><div style="margin-top:16px"><button class="action" id="secureToggle" type="button">🔐 دخول المعلمة</button> <button class="action" id="studentToggle" type="button">دخول الطالبة</button> <button class="action" id="familyToggle">دخول الأسرة</button></div></header><main class="wrap"><section class="panel" id="homeWelcome"><h2>مرحبًا بكِ في المنصة 🌷</h2><button class="action secondary" onclick="showPublicBoard()">جولة تعريفية للزائرات</button></section><section class="panel hidden" id="sectionBoard"><button class="action secondary" onclick="showHome()">الواجهة الرئيسية</button><div class="flex" style="justify-content:space-between"><h2>جولة في أقسام المنصة</h2><span class="muted">15 قسمًا</span></div><div class="nav" id="nav"></div></section><section class="panel hidden" id="detail"></section><section class="panel hidden" id="secureArea"><div class="flex" style="justify-content:space-between"><button class="action secondary section-back" id="closeSecure" type="button">العودة إلى لوحة الأقسام</button><h2>🔐 البوابة المحمية</h2></div><div id="authBox"><form id="secureLogin"><label>البريد الإلكتروني <input type="email" id="secureEmail" required autocomplete="username"></label><label>كلمة المرور <input type="password" id="securePassword" required autocomplete="current-password"></label><button class="action" type="submit" id="secureSubmit">دخول المنصة</button></form><p id="secureError" role="alert"></p></div><div id="secureDashboard" class="hidden"><div class="flex" style="justify-content:space-between"><h3 id="secureTitle">لوحتي</h3><button class="action secondary" id="secureLogout">تسجيل الخروج</button></div><div id="secureBody"></div></div></section></main><footer>English Learning Hub • Hakimah Almutairi</footer><script>
+</style></head><body><header><div style="font-size:34px">📖 ✨ 👑</div><h1>English Learning Hub</h1><p>الثانوية الخامسة والأربعون<br><span id="subtitle">المعلمة حكيمة المطيري</span></p><div style="margin-top:16px"><button class="action" id="secureToggle" type="button">🔐 دخول المعلمة</button> <button class="action" id="studentToggle" type="button">دخول الطالبة</button> <button class="action" id="adminToggle">🏫 دخول الإدارة</button> <button class="action" id="familyToggle">دخول الأسرة</button></div></header><main class="wrap"><section class="panel" id="homeWelcome"><h2>مرحبًا بكِ في المنصة 🌷</h2><button class="action secondary" onclick="showPublicBoard()">جولة تعريفية للزائرات</button></section><section class="panel hidden" id="sectionBoard"><button class="action secondary" onclick="showHome()">الواجهة الرئيسية</button><div class="flex" style="justify-content:space-between"><h2>جولة في أقسام المنصة</h2><span class="muted">15 قسمًا</span></div><div class="nav" id="nav"></div></section><section class="panel hidden" id="detail"></section><section class="panel hidden" id="secureArea"><div class="flex" style="justify-content:space-between"><button class="action secondary section-back" id="closeSecure" type="button">العودة إلى لوحة الأقسام</button><h2>🔐 البوابة المحمية</h2></div><div id="authBox"><form id="secureLogin"><label>البريد الإلكتروني <input type="email" id="secureEmail" required autocomplete="username"></label><label>كلمة المرور <input type="password" id="securePassword" required autocomplete="current-password"></label><button class="action" type="submit" id="secureSubmit">دخول المنصة</button></form><p id="secureError" role="alert"></p></div><div id="secureDashboard" class="hidden"><div class="flex" style="justify-content:space-between"><h3 id="secureTitle">لوحتي</h3><button class="action secondary" id="secureLogout">تسجيل الخروج</button></div><div id="secureBody"></div></div></section></main><footer>English Learning Hub • Hakimah Almutairi</footer><script>
 const sections=[['▦','نظرة عامة'],['👩‍🎓','الطالبات والفصول'],['📝','تدريبات تفاعلية'],['📚','مكتبة الوحدات'],['🎯','مسار التمكّن'],['🌟','آفاق الإثراء'],['🏆','رواق التميّز'],['💬','بصمات التفاعل الرقمي'],['🎨','معرض إبداعات الطالبات'],['👑','ملكات الكتابة'],['📓','رائدات كتاب النشاط'],['🎓','متفوقات الاختبارات'],['👨‍👩‍👧','بوابة الأسرة'],['🗄️','سجل الفصل الدراسي'],['🛡️','صلاحيات الدخول']];const el=document.getElementById('detail');document.getElementById('nav').innerHTML=sections.map((s,i)=>`<button class="tile" onclick="show(${i})"><span class="emoji">${s[0]}</span><b>${s[1]}</b></button>`).join('');function moveToPage(focus){
   if(focus)focus.focus({preventScroll:true});
   window.scrollTo({top:0,behavior:'instant'});
@@ -535,13 +535,14 @@ async function teacherLoad(refresh=false){
       break;
     case 13: body=reportCard+archive;break;
     case 14:
-      body=card('دخول الطالبة برمز رباعي',
+      body=card('حسابات الإدارة', '<p id="leadStatus" role="status"></p>'+form('manageLeadership',select('role','الحساب',leadRoles)+select('action','الإجراء','<option value="issue">إصدار مفتاح دخول جديد</option><option value="disable">تعطيل الدخول</option>'),'تنفيذ')+
+        '<p>إصدار مفتاح جديد يلغي المفتاح السابق لهذا الحساب. شاركي المفتاح على انفراد.</p><output id="leadKey" dir="ltr" style="overflow-wrap:anywhere"></output>')+card('دخول الطالبة برمز رباعي',
       form('issueClassCodes',select('id','الفصل',classOptions),'إصدار رموز الفصل')+
       form('issueStudentCode',select('id','الطالبة',activeOptions),'إصدار أو إعادة تعيين رمز')+
       '<p class="muted">تظهر الرموز عند إصدارها. سلّمي كل طالبة رمزها على انفراد. تنتهي صلاحية الرمز بعد 90 يومًا. إصدار رمز للفصل يشمل الطالبات اللاتي ليس لديهن رمز ساري.</p><div id="studentInvite"></div>'+
       form('revokeStudentCode',select('id','الطالبة',studentOptions),'إلغاء الرمز'))+
       card('ربط حساب طالبة',form('linkStudent',select('id','الطالبة',activeOptions)+fields('email','بريد حساب مؤكد في Supabase','type="email"'),'ربط الحساب'))+
-        card('الصلاحيات',table(['الدور','الوصول'],[['المعلمة','الإدارة والتقارير'],['الطالبة','الأنشطة والنتائج والخطط والتكريم الخاص بها'],['الأسرة','النتائج المعتمدة والتكريم والرسائل الخاصة بطالبة واحدة'],['الإدارة','عرض ملخص بالأعداد'],['الزائرات','العرض التجريبي']]));
+        card('الصلاحيات',table(['الدور','الوصول'],[['المعلمة','الإدارة والتقارير'],['الطالبة','الأنشطة والنتائج والخطط والتكريم الخاص بها'],['الأسرة','النتائج المعتمدة والتكريم والرسائل الخاصة بطالبة واحدة'],['الإدارة','الاطلاع على التقارير والنتائج والخطط والإنجازات'],['الزائرات','العرض التجريبي']]));
       break;
   }
   const focusTitle=document.activeElement?.id==='teacherSectionTitle';
@@ -559,6 +560,22 @@ async function teacherLoad(refresh=false){
     };
   }
   if(focusTitle)$('teacherSectionTitle').focus({preventScroll:true});
+  if($('manageLeadership')){
+    const status=$('leadStatus');
+    const key=$('leadKey');
+    const refresh=async()=>{
+      const state=await checked(client.rpc('hub_manage_leadership',{p_role:null,p_action:'status'}));
+      status.textContent=['principal','vice_principal'].map(r=>leadNames[r]+' — '+(state[r]?'مفعّل':'غير مفعّل')).join(' | ');
+    };
+    refresh().catch(()=>status.textContent='تعذّر تحميل حالة الحسابين');
+    bind('manageLeadership',async({role,action})=>{
+      key.textContent='';
+      const result=await checked(client.rpc('hub_manage_leadership',{p_role:role,p_action:action}));
+      key.textContent=result.key||'';
+      await refresh();
+      return action==='issue'?'صدر مفتاح دخول '+leadNames[role]:'عُطّل حساب '+leadNames[role];
+    },false);
+  }
   const manageClass=(id,name,grade,archive=null)=>checked(client.rpc('hub_manage_class',
     {p_id:id,p_name:name,p_grade:grade,p_archive:archive}));
   bind('addClass',({name,grade_level})=>manageClass(null,name,grade_level).then(()=> 'أُضيف الفصل'));
@@ -932,6 +949,41 @@ async function loadLearningReviews(kind,studentName,version){
       p_task:task,p_score:Number(score),p_feedback:feedback})));
   }catch(error){if(root.isConnected)root.textContent='تعذّر تحميل سجل التقييم.'}
 }
+const leadNames={principal:'المديرة',vice_principal:'الوكيلة'};
+const leadRoles=Object.entries(leadNames).map(([role,name])=>`<option value="${role}">${name}</option>`).join('');
+$('adminToggle').onclick=()=>{
+  showHome();
+  document.querySelector('header').classList.add('hidden');
+  $('homeWelcome').classList.add('hidden');
+  const root=$('detail');
+  root.classList.remove('hidden');
+  root.innerHTML='<button class="action secondary" id="leadHome">الواجهة الرئيسية</button><h2>دخول الإدارة</h2>'+
+    form('leadLogin',select('role','الحساب',leadRoles)+fields('key','مفتاح الدخول','type="password" dir="ltr" autocomplete="current-password"'),'دخول')+'<p role="alert" id="leadError"></p>';
+  $('leadHome').onclick=showHome;
+  moveToPage();
+  const login=$('leadLogin');
+  login.onsubmit=async e=>{
+    e.preventDefault();
+    const role=login.elements.role.value;
+    const btn=login.querySelector('button');
+    btn.disabled=true;
+    try{
+      const report=await checked(client.rpc('hub_leadership_report',{p_role:role,p_key:login.elements.key.value.trim()}));
+      if(!login.isConnected)return;
+      const panels=[
+        ['📊','تقرير الفصول',table(['الفصل','المقرر','الطالبات','التسليمات','الخطط المكتملة'],report.classes.map(c=>[c.name,c.course,c.students,c.submissions,c.completed]))],
+        ['📝','النتائج المعتمدة',table(['الطالبة','الفصل','النشاط','الدرجة','من'],report.results.map(r=>[r.full_name,r.class_name,r.title,r.score,r.max_score]))],
+        ['🎯','الخطط العلاجية والإثرائية',table(['الطالبة','الفصل','الخطة','المسار','الحالة'],report.plans.map(p=>[p.full_name,p.class_name,p.title,labels[p.kind]||p.kind,p.completed?'مكتملة':'قيد التنفيذ']))],
+        ['🏆','إنجازات الطالبات',table(['الطالبة','الفصل','التكريم','الأسبوع'],report.honors.map(h=>[h.full_name,h.class_name,h.title,h.week_start]))]
+      ];
+      root.innerHTML='<h2>لوحة '+leadNames[role]+'</h2><p>للاطلاع فقط</p>'+sectionMenu(panels)+panels.map(([,name,body])=>sectionPanel(name,body)).join('')+'<button class="action secondary" id="leadExit">تسجيل الخروج</button>';
+      installSectionBoard(root);
+      $('leadExit').onclick=showHome;
+      moveToPage();
+    }catch{if(login.isConnected)info('leadError','تعذّر الدخول. تحققي من الحساب ومفتاح الدخول ثم أعيدي المحاولة.',true)}
+    finally{btn.disabled=false}
+  };
+};
 async function adminLoad(){
   const version=viewVersion;
   const summary=await checked(client.rpc('hub_admin_summary'));
