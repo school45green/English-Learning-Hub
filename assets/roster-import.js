@@ -59,15 +59,36 @@ function grouping(items) {
     line.sort((a,b) => a.transform[4]-b.transform[4]));
 }
 
-async function readPdf(bytes) {
+async function openPdf(bytes) {
   const pdfjs = await import(`${pdfLibrary}/legacy/build/pdf.mjs`);
   pdfjs.GlobalWorkerOptions.workerSrc = `${pdfLibrary}/legacy/build/pdf.worker.mjs`;
-  const loading = pdfjs.getDocument({
+  return pdfjs.getDocument({
     data: bytes, disableFontFace: true, useSystemFonts: false,
     isEvalSupported: false, enableXfa: false,
     stopAtErrors: true,
     standardFontDataUrl: `${pdfLibrary}/standard_fonts/`,
   });
+}
+
+export async function readPdfLines(file) {
+  const loading = await openPdf(new Uint8Array(await file.arrayBuffer()));
+  try {
+    const document = await loading.promise;
+    if (document.numPages > 20) throw new Error('الملف يتجاوز 20 صفحة.');
+    const lines = [];
+    for (let number = 1; number <= document.numPages; number++) {
+      const page = await document.getPage(number);
+      const {items} = await page.getTextContent();
+      lines.push(...grouping(items).map(line => line.map(item => item.str.trim()).join(' ')));
+    }
+    return lines;
+  } finally {
+    await loading.destroy();
+  }
+}
+
+async function readPdf(bytes) {
+  const loading = await openPdf(bytes);
   const result = { names: [], issues: [], classHint: null };
   try {
     const document = await loading.promise;
@@ -82,10 +103,9 @@ async function readPdf(bytes) {
       for (const line of lines) {
         const texts = line.map(item => item.str.trim());
         const decoded = texts.map(readArial);
-        if (decoded.includes('الصف')) {
-          if (decoded.includes('الأول الثانوي')) gradeLevel = 'أول ثانوي';
-          if (decoded.includes('الثالث الثانوي')) gradeLevel = 'ثالث ثانوي';
-        }
+        const header = decoded.filter(Boolean).join(' ');
+        if (header.includes('الأول الثانوي')) gradeLevel = 'أول ثانوي';
+        if (header.includes('الثالث الثانوي')) gradeLevel = 'ثالث ثانوي';
         if (decoded.includes('الفصل')) {
           const number = texts.map(arabicDigits).find(text => /^[0-9]{1,2}$/.test(text));
           if (number) section = Number(number);
@@ -99,7 +119,15 @@ async function readPdf(bytes) {
         }
         expected = index + 1;
         foundRows++;
-        const beforeId = decoded.slice(0,position);
+        const rowSection = arabicDigits(texts[0]);
+        const hasSection = /^[0-9]{1,2}$/.test(rowSection);
+        if (hasSection) {
+          if (section && section !== Number(rowSection)) {
+            result.issues.push(`الصفحة ${number} – أرقام الفصول تختلف داخل الكشف.`);
+          }
+          section = Number(rowSection);
+        }
+        const beforeId = decoded.slice(hasSection ? 1 : 0,position);
         const name = beforeId.every(Boolean) ? beforeId.reverse().join(' ') : '';
         recordName(result, name, `الصفحة ${number} – الصف ${index}`);
       }

@@ -252,7 +252,7 @@ async function teacherLoad(){
   const version=viewVersion;
   const [classes,students,activities,submissions,plans,honors,inbox,archives]=await Promise.all([
     rows('school_classes','id,name,course,grade_level,archived_at'),rows('students','id,full_name,class_id,active'),
-    rows('activities','id,title,kind,course,unit_no,skill,max_score,max_attempts,published,activity_targets(class_id)'),
+    rows('activities','id,title,kind,course,unit_no,skill,max_score,max_attempts,published,activity_targets(class_id),activity_student_targets(student_id)'),
     rows('submissions','id,student_id,activity_id,score,submitted_at,status,attempt'),
     rows('hub_plans','id,student_id,kind,title,instructions,due_on,completed,unit_no,skill'),
     rows('honors','id,student_id,category,title,description,week_start,archived_at'),
@@ -272,10 +272,10 @@ async function teacherLoad(){
     const st=students.find(s=>s.id===x.student_id);
     return [studentName(x.student_id),className(st?.class_id),activityName(x.activity_id),x.attempt,x.score,activities.find(a=>a.id===x.activity_id)?.max_score,x.status,x.submitted_at];
   })];
-  const activityRows=items=>table(['النشاط','المقرر','الوحدة','الفصل','منشور'],items.map(x=>[x.title,x.course,x.unit_no,x.activity_targets.map(t=>className(t.class_id)).join('، '),x.published?'نعم':'مسودة']));
-  const activityForm=card('إنشاء اختبار',form('newActivity',fields('title','العنوان','maxlength="160"')+select('classId','الفصل',classOptions)+select('kind','النوع',options(kinds,x=>x.name))+fields('unit','الوحدة','type="number" min="1" max="20"')+fields('attempts','المحاولات','type="number" min="1" max="20" value="1"')+
-    '<label>المهارة <input name="skill" maxlength="80"></label><div id="questions"></div><button type="button" class="action secondary" id="addQuestion">إضافة سؤال</button> ','حفظ مسودة'));
-  const publishing=card('النشر',form('publishActivity',select('id','النشاط',options(activities,x=>x.title))+select('published','الحالة','<option value="true">نشر</option><option value="false">إيقاف النشر</option>')));
+  const activityRows=items=>table(['النشاط','المقرر','الوحدة','الفصل','منشور'],items.map(x=>[x.title,x.course,x.unit_no,[...x.activity_targets.map(t=>className(t.class_id)),...x.activity_student_targets.map(t=>studentName(t.student_id))].join('، '),x.published?'نعم':'مسودة']));
+  const activityForm=card('إنشاء اختبار',form('newActivity',fields('title','العنوان','maxlength="160"')+'<fieldset><legend>الفصول المستهدفة</legend>'+classes.filter(c=>!c.archived_at).map(c=>`<label><input type="checkbox" name="classId" value="${safe(c.id)}"> ${safe(c.name)} — ${safe(c.course)}</label>`).join('')+'</fieldset><label>طالبات محددات <select multiple size="5" name="studentId">'+activeOptions+'</select></label>'+select('kind','النوع',options(kinds,x=>x.name))+fields('unit','الوحدة','type="number" min="1" max="20"')+fields('attempts','المحاولات','type="number" min="1" max="20" value="1"')+
+    '<label>المهارة <input name="skill" maxlength="80"></label><label>استيراد ورقة أسئلة PDF نصي أو TXT <input id="worksheetFile" type="file" accept=".pdf,.txt"></label><p>رقّمي الأسئلة، واكتبي الخيارات A. إلى D. ومفتاح Answer: A إن وجد. راجعي كل سؤال قبل حفظه.</p><button id="importWorksheet" type="button" class="action secondary">استخراج الأسئلة</button><p id="worksheetStatus" aria-live="polite"></p><div id="questions"></div><button type="button" class="action secondary" id="addQuestion">إضافة سؤال</button> ','حفظ مسودة'));
+  const publishing=card('إعادة فتح محاولة',form('reopenActivity',select('student','الطالبة',activeOptions)+select('activity','النشاط',options(activities,x=>x.title)),'فتح محاولة إضافية'))+card('النشر',form('publishActivity',select('id','النشاط',options(activities,x=>x.title))+select('published','الحالة','<option value="true">نشر</option><option value="false">إيقاف النشر</option>')));
   const filter = (id,label,values,name) => `<label>${label} <select id="${id}"><option value="">الكل</option>${options(values,name)}</select></label>`;
   const reportCard=card('تقارير الدرجات والإنجاز',
     '<div class="secure-grid" id="reportFilters">'+
@@ -326,7 +326,8 @@ async function teacherLoad(){
       body=`<div class="secure-grid">${card('الفصول',classes.length)}${card('الطالبات النشطات',students.filter(x=>x.active).length)}${card('الأنشطة',activities.length)}${card('التسليمات',submissions.length)}</div>`+
       card('المتابعة حسب النشاط',table(['النشاط','المستهدفات النشطات','سلّمن','لم يسلّمن'],activities.map(a=>{
         const assigned=new Set(a.activity_targets.map(t=>t.class_id));
-        const roster=students.filter(s=>s.active&&assigned.has(s.class_id));
+        const individual=new Set(a.activity_student_targets.map(t=>t.student_id));
+        const roster=students.filter(s=>s.active&&(assigned.has(s.class_id)||individual.has(s.id)));
         const done=new Set(submissions.filter(x=>x.activity_id===a.id).map(x=>x.student_id));
         const submitted=roster.filter(s=>done.has(s.id)).length;
         return [a.title,roster.length,submitted,roster.length-submitted];
@@ -469,11 +470,11 @@ async function teacherLoad(){
     $('editStudent').elements.active.value=String(student.active);
   };
   if($('addQuestion')){
-    const addQuestion=()=>{
+    const addQuestion=(item={})=>{
       const box=document.createElement('fieldset');
       box.className='secure-card';
       box.innerHTML='<legend>سؤال</legend>'+fields('prompt','نص السؤال','maxlength="500"')+
-        select('type','نوع السؤال','<option value="multiple" selected>اختيار من متعدد</option><option value="boolean">صواب أو خطأ</option>')+
+        fields('points','درجة السؤال','type="number" min="1" max="20" value="1"')+select('type','نوع السؤال','<option value="multiple" selected>اختيار من متعدد</option><option value="boolean">صواب أو خطأ</option>')+
         '<div data-choices></div><button type="button" class="action secondary">إزالة السؤال</button>';
       const type=box.querySelector('[name="type"]');
       const choiceFields=box.querySelector('[data-choices]');
@@ -484,22 +485,45 @@ async function teacherLoad(){
             .map((label,i)=>'<option value="'+i+'">'+label+'</option>').join(''));
       };
       type.onchange=renderChoices;
+      if(item.boolean)type.value='boolean';
       renderChoices();
+      box.querySelector('[name="prompt"]').value=item.prompt??'';
+      (item.choices||[]).forEach((choice,i)=>{
+        const field=box.querySelector('[name="choice'+(i+1)+'"]');
+        if(field)field.value=choice;
+      });
+      if(item.correct!=null)box.querySelector('[name="correct"]').value=String(item.correct);
       box.querySelector('button').onclick=()=>{if($('questions').children.length>1)box.remove()};
       $('questions').append(box);
     };
     $('addQuestion').onclick=()=>{if($('questions').children.length<100)addQuestion()};
     addQuestion();
+    $('importWorksheet').onclick=async()=>{
+      const control=$('importWorksheet');
+      control.disabled=true;
+      try{
+        const {readWorksheet}=await import('./assets/worksheet-import.js');
+        const items=await readWorksheet($('worksheetFile').files[0]);
+        if(version!==viewVersion)return;
+        $('questions').replaceChildren();
+        items.forEach(addQuestion);
+        info('worksheetStatus','استُخرج '+items.length+' سؤال. راجعي النص والخيارات والإجابات.');
+      }catch(error){
+        if(version===viewVersion)info('worksheetStatus',error.message,true);
+      }finally{control.disabled=false}
+    };
   }
   bind('newActivity',data=>{
     const questions=Array.from($('questions').children,(box,i)=>{
       const value=name=>box.querySelector('[name="'+name+'"]').value.trim();
       const choices=value('type')==='boolean'?['True','False']:[1,2,3,4].map(n=>value('choice'+n));
       if(choices.some(x=>!x)||new Set(choices).size!==choices.length)throw new Error('أدخلي خيارات مختلفة لكل سؤال');
-      return {id:'q'+(i+1),prompt:value('prompt'),choices,correct:choices[Number(value('correct'))],points:1};
+      return {id:'q'+(i+1),prompt:value('prompt'),choices,correct:choices[Number(value('correct'))],points:Number(value('points'))};
     });
-    return checked(client.rpc('hub_create_activity',{p_title:data.title,p_class:data.classId,p_kind:data.kind,p_unit:Number(data.unit),p_skill:data.skill,p_attempts:Number(data.attempts),p_questions:questions})).then(()=> 'حُفظ الاختبار كمسودة');
+    const targets=new FormData($('newActivity'));
+    return checked(client.rpc('hub_create_scoped_activity',{p_title:data.title,p_classes:targets.getAll('classId'),p_students:targets.getAll('studentId'),p_kind:data.kind,p_unit:Number(data.unit),p_skill:data.skill,p_attempts:Number(data.attempts),p_questions:questions})).then(()=> 'حُفظ الاختبار كمسودة');
   });
+  bind('reopenActivity',({student,activity})=>checked(client.rpc('hub_reopen_activity',{p_student:student,p_activity:activity})).then(()=> 'فُتحت محاولة إضافية لهذه الطالبة'));
   bind('publishActivity',({id,published})=>checked(client.from('activities').update({published:published==='true'}).eq('id',id)));
   bind('newPlan',async data=>{
     if(Boolean(data.class_id)===Boolean(data.student_id))throw new Error('اختاري فصلًا كاملًا أو طالبة واحدة.');
@@ -736,7 +760,24 @@ card('مكتبة الوحدات',table(['الوحدة','النشاط','المه�
 ['remedial','enrichment'].map(kind=>card(kind==='remedial'?'خططي العلاجية':'خططي الإثرائية',
 table(['الخطة','التعليمات','الموعد','الحالة'],(data.plans||[]).filter(x=>x.kind===kind).map(x=>[x.title,x.instructions,x.due_on,x.completed?'مكتملة':'قيد التنفيذ'])))).join('')+
 card('التكريم والأعمال المعتمدة','<div id="myHonorDetails">جارٍ التحميل…</div>');
-for(const a of activities){const box=document.createElement('div');box.className='secure-card';const title=document.createElement('h3');title.textContent=a.title||'نشاط';box.append(title);if(a.resource&&!code)box.append(resourceButton('units',a.id));const form=document.createElement('form');const questions=Array.isArray(a.questions)?a.questions:(Array.isArray(a.answer_key?.questions)?a.answer_key.questions:[]);if(a.attempts_used>=a.max_attempts){box.append('اكتملت المحاولات المتاحة.');$('myActivities').append(box);continue}if(!questions.length){const p=document.createElement('p');p.textContent='لا توجد أسئلة متاحة لهذا النشاط حاليًا.';box.append(p);$('myActivities').append(box);continue}questions.forEach((q,i)=>{const field=document.createElement('fieldset');const legend=document.createElement('legend');legend.textContent=q.question||q.prompt||'Question '+(i+1);field.append(legend);(q.options||q.choices||[]).forEach((opt,j)=>{const lab=document.createElement('label');lab.className='quiz-option';const input=document.createElement('input');input.type='radio';input.name='q'+i;input.value=String(j);input.required=true;lab.append(input,document.createTextNode(' '+(typeof opt==='string'?opt:opt.text||String(opt))));field.append(lab)});form.append(field)});const btn=document.createElement('button');btn.className='action';btn.textContent='تسليم النشاط';form.append(btn);const status=document.createElement('p');form.onsubmit=async e=>{e.preventDefault();const fd=new FormData(form);const answers=Object.fromEntries(questions.map((q,i)=>[q.id,String((q.options||q.choices||[])[Number(fd.get('q'+i))]) ]));btn.disabled=true;const {data:res,error:err}=await request('student_submit_quiz',code?{p_activity:a.id,p_answers:answers}:{p_activity_id:a.id,p_answers:answers});if(version!==viewVersion)return;if(err||!res){status.textContent=err?'تعذّر التسليم: '+err.message:'انتهت صلاحية الدخول. أعيدي فتح رابط الدعوة.';btn.disabled=false;return}status.textContent='تم حفظ الدرجة: '+res.score+' / '+res.max_score;await studentLoad(code).catch(error=>{if(version===viewVersion)box.append(document.createTextNode(error.message))})};box.append(form,status);$('myActivities').append(box)}
+for(const a of activities){const box=document.createElement('div');box.className='secure-card';const title=document.createElement('h3');title.textContent=a.title||'نشاط';box.append(title);if(a.resource&&!code)box.append(resourceButton('units',a.id));const form=document.createElement('form');const questions=Array.isArray(a.questions)?a.questions:(Array.isArray(a.answer_key?.questions)?a.answer_key.questions:[]);if(a.attempts_used>=a.max_attempts){box.append('اكتملت المحاولات المتاحة.');$('myActivities').append(box);continue}if(!questions.length){const p=document.createElement('p');p.textContent='لا توجد أسئلة متاحة لهذا النشاط حاليًا.';box.append(p);$('myActivities').append(box);continue}questions.forEach((q,i)=>{const field=document.createElement('fieldset');const legend=document.createElement('legend');legend.textContent=q.question||q.prompt||'Question '+(i+1);field.append(legend);(q.options||q.choices||[]).forEach((opt,j)=>{const lab=document.createElement('label');lab.className='quiz-option';const input=document.createElement('input');input.type='radio';input.name='q'+i;input.value=String(j);input.required=true;input.checked=a.draft?.[q.id]===opt;lab.append(input,document.createTextNode(' '+(typeof opt==='string'?opt:opt.text||String(opt))));field.append(lab)});form.append(field)});const btn=document.createElement('button');btn.className='action';btn.textContent='تسليم النشاط';form.append(btn);const status=document.createElement('p');
+let revision=a.draft_revision??0;
+let save=Promise.resolve();
+let submitting=false;
+form.onchange=()=>{
+  if(submitting)return;
+  const values=new FormData(form);
+  const answers=Object.fromEntries(questions.flatMap((q,i)=>{
+    const key='q'+i;
+    return values.has(key)?[[q.id,(q.options||q.choices)[Number(values.get(key))]]]:[];
+  }));
+  save=save.then(async()=>{
+    if(version!==viewVersion)return;
+    revision=await checked(client.rpc('hub_save_activity_draft',{p_token:code?.token??null,p_activity:a.id,p_answers:answers,p_revision:revision,p_attempt:Number(a.attempts_used)+1}));
+    status.textContent='حُفظت إجاباتك تلقائيًا.';
+  }).catch(()=>{status.textContent='تعذّر حفظ المسودة. أعيدي فتح النشاط أو سلّمي الإجابات عند الانتهاء.'});
+};
+form.onsubmit=async e=>{e.preventDefault();if(submitting)return;submitting=true;await save;const fd=new FormData(form);const answers=Object.fromEntries(questions.map((q,i)=>[q.id,String((q.options||q.choices||[])[Number(fd.get('q'+i))]) ]));btn.disabled=true;const {data:res,error:err}=await request('student_submit_quiz',code?{p_activity:a.id,p_answers:answers}:{p_activity_id:a.id,p_answers:answers});if(version!==viewVersion)return;if(err||!res){status.textContent=err?'تعذّر التسليم: '+err.message:'انتهت صلاحية الدخول. أعيدي فتح رابط الدعوة.';btn.disabled=false;submitting=false;return}status.textContent='تم حفظ الدرجة: '+res.score+' / '+res.max_score;await studentLoad(code).catch(error=>{if(version===viewVersion)box.append(document.createTextNode(error.message))})};box.append(form,status);$('myActivities').append(box)}
 $('myResults').innerHTML=results.length?results.map(r=>`<p>${safe(r.activity||r.title||'نشاط')} — <b>${safe(r.score)} / ${safe(r.max_score)}</b></p>`).join(''):'<p>لا توجد درجات مسجلة.</p>';
 void renderLearningTasks(code,version);
 }
