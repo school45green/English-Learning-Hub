@@ -1,8 +1,13 @@
 <!doctype html><html lang="ar" dir="rtl"><head><meta name="referrer" content="no-referrer"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>English Learning Hub</title><style>
 :root{font-family:system-ui,'Segoe UI',sans-serif;color:#163e39;background:#f7f7f3}*{box-sizing:border-box}body{margin:0}header{background:linear-gradient(115deg,#104e46,#237b70 60%,#ab8a44);color:white;padding:35px 20px 55px;text-align:center}header h1{font-family:Georgia,serif;font-size:clamp(26px,5vw,43px);margin:8px}header p{opacity:.9}.wrap{max-width:1120px;margin:-30px auto 50px;padding:0 18px}.panel{background:white;border-radius:22px;box-shadow:0 12px 35px #1d3c3214;padding:22px;margin-bottom:22px}.nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}.tile{cursor:pointer;border:1px solid #ffffffaa;border-radius:18px;padding:22px 16px;min-height:108px;text-align:right;color:#173a35;box-shadow:0 6px 16px #122e2610;transition:transform .15s}.tile:hover{transform:translateY(-3px)}.tile .emoji{font-size:28px;display:block;margin-bottom:8px}.tile b{font-size:16px}.tile:nth-child(6n+1){background:#dcf1e9}.tile:nth-child(6n+2){background:#e6e9ff}.tile:nth-child(6n+3){background:#dff1ff}.tile:nth-child(6n+4){background:#fce5ee}.tile:nth-child(6n+5){background:#fff0cb}.tile:nth-child(6n){background:#eae4ff}.tag{display:inline-block;background:#fff3d0;color:#755719;padding:7px 13px;border-radius:20px;font-size:13px;font-weight:700}button,input,select,textarea{font:inherit}button.action{border:0;background:#176b5e;color:white;padding:11px 17px;border-radius:12px;cursor:pointer;margin:5px 0}button.secondary{background:#eee;color:#24463d}input,select,textarea{padding:11px;border:1px solid #cbd8d4;border-radius:10px;max-width:100%;margin:5px}textarea{width:100%;min-height:85px}h2{margin:0 0 14px}h3{margin:18px 0 8px}.muted{color:#65736d}.hidden{display:none}.flex{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.notice{background:#fff8df;padding:15px;border-radius:12px;border:1px solid #e7d9a8;margin:14px 0}table{border-collapse:collapse;width:100%;font-size:14px}td,th{padding:11px;border-bottom:1px solid #eee;text-align:right}.scroll{overflow:auto}.quiz-option{display:block;padding:10px;background:#f4f8f7;border-radius:10px;margin:8px 0;cursor:pointer}footer{text-align:center;color:#697b74;padding:25px}@media(max-width:500px){header{padding-top:24px}.nav{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.tile{padding:15px 11px;min-height:104px}.tile b{font-size:13px}.panel{padding:16px}.wrap{padding:0 11px}}
-.secure-field{width:min(100%,460px);display:block}.secure-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.secure-card{background:#f4f9f6;border:1px solid #deebe5;border-radius:14px;padding:16px;margin:10px 0}.secure-card h3{margin:0 0 10px}.secure-card input,.secure-card select{width:100%;margin:6px 0}.secure-card label{display:block}.error{color:#a32929}.success{color:#126345}.secure-table{overflow:auto}.secure-table table{min-width:430px}@media(max-width:500px){.secure-grid{grid-template-columns:1fr}} </style></head><body><header><div style="font-size:34px">📖 ✨ 👑</div><h1>English Learning Hub</h1><p id="subtitle">المعلمة حكيمة المطيري | جولة استعراضية</p><span class="tag">نسخة تجريبية مجانية • بيانات وهمية</span><div style="margin-top:16px"><button class="action" id="secureToggle" type="button">🔐 دخول المعلمة أو الطالبة</button> <button class="action" id="studentToggle" type="button">دخول الطالبات برمز</button></div></header><main class="wrap"><section class="panel"><div class="flex" style="justify-content:space-between"><h2>أقسام المنصة</h2><span class="muted">15 قسمًا</span></div><div class="nav" id="nav"></div></section><section class="panel" id="detail"><h2>مرحبًا بكِ في المنصة 🌷</h2><p>اختاري أحد الأقسام لعرض نموذج تفاعلي لطريقة عمله.</p><div class="notice">هذه جولة عامة ببيانات وهمية فقط. استخدمي بوابة الدخول المحمية للمعلمة والطالبة. تتوفر بوابة الأسرة عبر رابط دعوة خاص من المعلمة.</div></section><section class="panel hidden" id="secureArea"><div class="flex" style="justify-content:space-between"><h2>🔐 البوابة المحمية</h2><button class="action secondary" id="closeSecure">العودة للأقسام</button></div><div id="authBox"><form id="secureLogin"><label>البريد الإلكتروني <input type="email" id="secureEmail" required autocomplete="username"></label><label>كلمة المرور <input type="password" id="securePassword" required autocomplete="current-password"></label><button class="action" type="submit" id="secureSubmit">دخول المنصة</button></form><p id="secureError" role="alert"></p></div><div id="secureDashboard" class="hidden"><div class="flex" style="justify-content:space-between"><h3 id="secureTitle">لوحتي</h3><button class="action secondary" id="secureLogout">تسجيل الخروج</button></div><div id="secureBody"></div></div></section></main><footer>English Learning Hub • Hakimah Almutairi</footer><script>
+.secure-field{width:min(100%,460px);display:block}.secure-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.secure-card{background:#f4f9f6;border:1px solid #deebe5;border-radius:14px;padding:16px;margin:10px 0}.secure-card h3{margin:0 0 10px}.secure-card input,.secure-card select{width:100%;margin:6px 0}.secure-card label{display:block}.error{color:#a32929}.success{color:#126345}.secure-table{overflow:auto}.secure-table table{min-width:430px}@media(max-width:500px){.secure-grid{grid-template-columns:1fr}}
+.report-bar{display:grid;grid-template-columns:minmax(0,1fr) minmax(75px,32%) 3em;gap:.5rem;align-items:center;margin:.45rem 0}
+.report-bar meter{width:100%;accent-color:var(--green,#346752)}
+.report-chart:empty{display:none}
+</style></head><body><header><div style="font-size:34px">📖 ✨ 👑</div><h1>English Learning Hub</h1><p id="subtitle">المعلمة حكيمة المطيري | جولة استعراضية</p><span class="tag">نسخة تجريبية مجانية • بيانات وهمية</span><div style="margin-top:16px"><button class="action" id="secureToggle" type="button">🔐 دخول المعلمة أو الطالبة</button> <button class="action" id="studentToggle" type="button">دخول الطالبات برمز</button></div></header><main class="wrap"><section class="panel"><div class="flex" style="justify-content:space-between"><h2>أقسام المنصة</h2><span class="muted">15 قسمًا</span></div><div class="nav" id="nav"></div></section><section class="panel" id="detail"><h2>مرحبًا بكِ في المنصة 🌷</h2><p>اختاري أحد الأقسام لعرض نموذج تفاعلي لطريقة عمله.</p><div class="notice">هذه جولة عامة ببيانات وهمية فقط. استخدمي بوابة الدخول المحمية للمعلمة والطالبة. تتوفر بوابة الأسرة عبر رابط دعوة خاص من المعلمة.</div></section><section class="panel hidden" id="secureArea"><div class="flex" style="justify-content:space-between"><h2>🔐 البوابة المحمية</h2><button class="action secondary" id="closeSecure">العودة للأقسام</button></div><div id="authBox"><form id="secureLogin"><label>البريد الإلكتروني <input type="email" id="secureEmail" required autocomplete="username"></label><label>كلمة المرور <input type="password" id="securePassword" required autocomplete="current-password"></label><button class="action" type="submit" id="secureSubmit">دخول المنصة</button></form><p id="secureError" role="alert"></p></div><div id="secureDashboard" class="hidden"><div class="flex" style="justify-content:space-between"><h3 id="secureTitle">لوحتي</h3><button class="action secondary" id="secureLogout">تسجيل الخروج</button></div><div id="secureBody"></div></div></section></main><footer>English Learning Hub • Hakimah Almutairi</footer><script>
 const sections=[['▦','نظرة عامة'],['👩‍🎓','الطالبات والفصول'],['📝','تدريبات تفاعلية'],['📚','مكتبة الوحدات'],['🎯','مسار التمكّن'],['🌟','آفاق الإثراء'],['🏆','رواق التميّز'],['💬','بصمات التفاعل الرقمي'],['🎨','معرض إبداعات الطالبات'],['👑','ملكات الكتابة'],['📓','رائدات كتاب النشاط'],['🎓','متفوقات الاختبارات'],['👨‍👩‍👧','بوابة الأسرة'],['🗄️','سجل الفصل الدراسي'],['🛡️','صلاحيات الدخول']];const demoStudents=[{id:'D-101',name:'سارة أحمد محمد (تجريبية)',class:'ثاني عام ٤'},{id:'D-102',name:'ليان خالد علي (تجريبية)',class:'ثالث ٢'}];const scores={};const messages=[];const el=document.getElementById('detail');document.getElementById('nav').innerHTML=sections.map((s,i)=>`<button class="tile" onclick="show(${i})"><span class="emoji">${s[0]}</span><b>${s[1]}</b></button>`).join('');function shell(i,body){el.innerHTML=`<div class="flex" style="justify-content:space-between"><h2>${sections[i][0]} ${sections[i][1]}</h2><span class="tag">وضع العرض التجريبي</span></div>${body}`;el.scrollIntoView({behavior:'smooth',block:'start'})}function studentSelect(){return `<select id="student">${demoStudents.map(x=>`<option value="${x.id}">${x.name} — ${x.class}</option>`).join('')}</select>`}function show(i){switch(i){case 0:shell(i,`<p>لوحة متابعة مختصرة للأنشطة والفصول والدرجات.</p><div class="flex"><span class="tag">طالبتان تجريبيتان</span><span class="tag">فصلان</span><span class="tag">نشاط تجريبي واحد</span></div><h3>إعدادات العرض</h3><label>اسم المعلمة <input id="teacherName" value="حكيمة المطيري"></label><button class="action" onclick="document.getElementById('subtitle').textContent='المعلمة '+document.getElementById('teacherName').value+' | جولة استعراضية'">تحديث العنوان</button>`);break;case 1:shell(i,`<p>نموذج لقائمة الطالبات بمعرّفات ثابتة.</p>${studentsTable()}<p class="muted">تتوفر إدارة الطالبات والفصول في لوحة المعلمة.</p>`);break;case 2:shell(i,`<p>نشاط إنجليزي تجريبي: Vocabulary — Unit 2</p>${studentSelect()}<div><b>What does “inmate” mean?</b>${['A person kept in a prison','A person who teaches students','A person who repairs cars','A person who writes books'].map((x,j)=>`<label class="quiz-option"><input type="radio" name="q" value="${j}"> ${String.fromCharCode(65+j)}. ${x}</label>`).join('')}</div><button class="action" onclick="submitQuiz()">تسليم النشاط</button><p id="feedback"></p>`);break;case 3:shell(i,`<p>مكتبة الوحدات حسب المقرر والفصل.</p><div class="flex"><span class="tag">Unit 1</span><span class="tag">Unit 2</span><span class="tag">Unit 3</span><span class="tag">Unit 4</span></div><p class="muted">تنشر المعلمة أنشطة الوحدات وتضيف المرفقات من اللوحة المحمية.</p>`);break;case 4:shell(i,`<h3>Unit 2 — Vocabulary</h3><p>خطة نموذجية: 3 أيام مفردات، يليها 2–3 أيام قواعد.</p><div class="notice">Day 1: inmate — A person kept in prison. بعد مراجعة البطاقة، انتقلي إلى التدريبات التفاعلية لاختبار قصير.</div><button class="action" onclick="show(2)">ابدئي اختبار المفردات</button>`);break;case 5:shell(i,`<p>مسارات الإثراء الأربعة:</p><div class="flex">${['Listening 🎧','Speaking 🎤','Reading 📖','Writing ✍️'].map(x=>`<span class="tag">${x}</span>`).join('')}</div><p>تظهر الخطط المكلّفة والمرفقات في حساب الطالبة.</p>`);break;case 6:shell(i,`<h3>لوحة الشرف الأسبوعية 🏆</h3><p>ترى كل طالبة وأسرتها التكريم المعتمد في بوابتهما المحمية.</p>`);break;case 7:shell(i,`<p>نماذج للمشاركات الرقمية والحوارات الصفية والتفاعل في الأنشطة.</p><div class="notice">لا توجد مشاركات منشورة حاليًا.</div>`);break;case 8:shell(i,`<p>معرض مشاريع الطالبات وصور الأعمال الإبداعية بعد مراجعتها واعتماد نشرها.</p>`);break;case 9:shell(i,`<h3>Writing Queens 👑</h3><p>مساحة لتكريم أفضل النصوص الإنجليزية والكتابة الإبداعية.</p><div class="notice">Example challenge: Write five sentences about your dream invention.</div><textarea placeholder="Write your paragraph here..."></textarea><p class="muted">هذا محرر عرض فقط؛ لا تُرفع كتابات حقيقية إلى الخادم في هذه النسخة.</p>`);break;case 10:shell(i,`<p>متابعة إنجاز أنشطة كتاب النشاط حسب الوحدة والفصل، مع رصد الإنجاز والتكريم.</p>`);break;case 11:shell(i,`<p>عرض الطالبات المتفوقات في الاختبارات بعد اعتماد المعلمة للأسماء والنتائج المعروضة.</p>`);break;case 12:shell(i,`<p>جربي كود العرض الوهمي <b>DEMO101</b> أو <b>DEMO102</b>.</p><input id="parentCode" placeholder="الكود التجريبي"><button class="action" onclick="parentLogin()">عرض النموذج</button><div id="parentResult"></div>`);break;case 13:shell(i,`<p>ملخص سجل التسليمات في هذه الجلسة فقط (لا يُحفظ بعد إغلاق الصفحة).</p>${resultsTable()}<button class="action" onclick="exportDemo()">تصدير CSV تجريبي</button><h3>صندوق الرسائل التجريبي</h3>${messages.length?messages.map(x=>`<p>📩 ${x}</p>`).join(''):'<p>لا توجد رسائل.</p>'}`);break;case 14:shell(i,`<p>تصميم الأدوار المخطط لها:</p><div class="scroll"><table><tr><th>الدور</th><th>الصلاحية</th></tr><tr><td>المعلمة</td><td>إدارة كاملة بعد تسجيل الدخول</td></tr><tr><td>الطالبة</td><td>أنشطتها ونتائجها</td></tr><tr><td>ولي الأمر</td><td>بيانات ابنته فقط بكود خادمي</td></tr><tr><td>الإدارة</td><td>ملخص بالأعداد</td></tr><tr><td>الزميلات</td><td>جولة تجريبية فقط</td></tr></table></div><div class="notice">تطبّق البوابة المحمية الصلاحيات بحسب الحساب والدور.</div>`);break;}}function studentsTable(){return `<div class="scroll"><table><tr><th>المعرّف</th><th>الاسم</th><th>الفصل</th></tr>${demoStudents.map(x=>`<tr><td>${x.id}</td><td>${x.name}</td><td>${x.class}</td></tr>`).join('')}</table></div>`}function submitQuiz(){const s=document.getElementById('student').value;const checked=document.querySelector('input[name="q"]:checked');if(!checked){document.getElementById('feedback').textContent='اختاري إجابة أولًا';return}scores[s]={score:checked.value==='0'?5:0,date:new Date().toLocaleString('ar-SA')};document.getElementById('feedback').textContent=`درجتك: ${scores[s].score} / 5 — حُفظت مؤقتًا في جلسة العرض فقط.`}function resultsTable(){return `<div class="scroll"><table><tr><th>الطالبة</th><th>الحالة</th><th>الدرجة</th></tr>${demoStudents.map(x=>`<tr><td>${x.name}</td><td>${scores[x.id]?'سلّمت':'لم تسلّم'}</td><td>${scores[x.id]?scores[x.id].score+'/5':'—'}</td></tr>`).join('')}</table></div>`}function parentLogin(){let v=document.getElementById('parentCode').value.trim().toUpperCase();let s=v==='DEMO101'?demoStudents[0]:v==='DEMO102'?demoStudents[1]:null;document.getElementById('parentResult').innerHTML=s?`<div class="notice"><b>${s.name}</b><p>الفصل: ${s.class}</p><p>نتيجة النشاط: ${scores[s.id]?scores[s.id].score+'/5':'لم تسلّم'}</p><textarea id="parentMessage" placeholder="رسالة تجريبية للمعلمة"></textarea><button class="action" onclick="sendMessage()">إرسال رسالة تجريبية</button><p id="sent"></p></div>`:'<p>الكود غير صحيح في العرض التجريبي.</p>'}function sendMessage(){const v=document.getElementById('parentMessage').value.trim();if(!v)return;messages.push(v.replace(/[<>&]/g,''));document.getElementById('sent').textContent='ظهرت الرسالة في صندوق العرض التجريبي لهذه الجلسة.'}function exportDemo(){const rows=[['الاسم','الفصل','الحالة','الدرجة'],...demoStudents.map(x=>[x.name,x.class,scores[x.id]?'سلّمت':'لم تسلّم',scores[x.id]?.score??''])];let csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='demo-results.csv';a.click();URL.revokeObjectURL(a.href)}
 </script><script type="module">
+import {downloadWorkbook,printPrivateTable} from "./assets/spreadsheet.js";
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm';
 const client=createClient('https://htnfjgstpsooejskffqu.supabase.co','sb_publishable_G614pC0LC4k7-gCxR3o9QQ_97dZt6Mp');
 const $=id=>document.getElementById(id);
@@ -113,14 +118,144 @@ function displayInvite(target,kind,result){
     pin.textContent='الرمز الرباعي: '+result.pin;pin.dir='auto';
     $(target).replaceChildren(open,copy,link,status,pin);
 }
+function learningPairs(value,skill,dayForIndex){
+  return value.trim().split(/\r?\n/).filter(line=>line.trim()).map((line,i)=>{
+    const parts=line.split('|').map(part=>part.trim());
+    if(parts.length!==2||!parts[0]||!parts[1])throw new Error('اكتبي السؤال والإجابة في كل سطر وافصلي بينهما بالرمز |');
+    return {skill,day:dayForIndex(i),prompt:parts[0],expected:parts[1]};
+  });
+}
+function learningTasks(data,remedial){
+  if(remedial){
+    const words=learningPairs(data.vocabulary,'vocabulary',i=>Math.floor(i/4)+1);
+    const grammar=learningPairs(data.grammar,'grammar',i=>4+i);
+    if(words.length!==12||![2,3].includes(grammar.length))throw new Error('أضيفي 12 كلمة وتمرينَي قواعد أو ثلاثة.');
+    return [...words,...grammar];
+  }
+  if(['reading','listening'].includes(data.mode))return learningPairs(data.practice,data.mode,()=>1);
+  return [{skill:data.mode,day:1,prompt:data.practice.trim(),expected:null}];
+}
+async function readLearningFile(file){
+  if(!file?.size)return {};
+  if(file.size>1572864)throw new Error('الحد الأقصى للمرفق 1.5 ميغابايت.');
+  const extensions={pdf:'application/pdf',mp3:'audio/mpeg',ogg:'audio/ogg',wav:'audio/wav',m4a:'audio/mp4',
+    webm:'audio/webm',jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',mp4:'video/mp4'};
+  const mime=extensions[file.name.split('.').pop().toLowerCase()];
+  if(!mime)throw new Error('صيغة المرفق غير مدعومة.');
+  const body=await new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(String(reader.result).split(',')[1]);
+    reader.onerror=()=>reject(new Error('تعذّر قراءة الملف.'));
+    reader.readAsDataURL(file);
+  });
+  return {p_mime:mime,p_base64:body};
+}
+const learningFileTypes={'application/pdf':'pdf','audio/mpeg':'mp3','audio/ogg':'ogg','audio/wav':'wav','audio/mp4':'m4a',
+  'audio/webm':'webm','image/jpeg':'jpg','image/png':'png','video/mp4':'mp4'};
+async function downloadLearningMedia(id,code){
+  const file=await checked(client.rpc('hub_download_learning_media',{p_media:id,p_token:code?.token??null}));
+  if(!file||!learningFileTypes[file.mime])throw new Error('المرفق غير متاح.');
+  const bytes=Uint8Array.from(atob(file.body),x=>x.charCodeAt(0));
+  download('English-Learning-Hub.'+learningFileTypes[file.mime],new Blob([bytes],{type:'application/octet-stream'}),'application/octet-stream');
+}
+function learningMediaButton(id,code){
+  const control=document.createElement('button');
+  control.className='action secondary';
+  control.type='button';
+  control.textContent='تنزيل المرفق';
+  control.onclick=async()=>{
+    control.disabled=true;
+    try{await downloadLearningMedia(id,code)}
+    catch(error){control.textContent=error.message}
+    finally{control.disabled=false}
+  };
+  return control;
+}
+async function renderLearningTasks(code,version){
+  const target=$('myLearning');
+  if(!target)return;
+  try{
+    const data=await checked(client.rpc('hub_student_learning',{p_token:code?.token??null}));
+    if(version!==viewVersion||!target.isConnected||!data)return;
+    for(const plan of data.plans){
+      const section=document.createElement('section');
+      section.className='secure-card';
+      const finished=plan.tasks.filter(task=>task.reviewed).length;
+      section.innerHTML='<h3>'+safe(plan.title)+'</h3><p>الوحدة '+safe(plan.unit)+' · '+safe(plan.skill)+' · تم تقييم '+finished+' من '+plan.tasks.length+'</p>';
+      const daily=new Map();
+      for(const task of plan.tasks){
+        if(!daily.has(task.day))daily.set(task.day,[]);
+        daily.get(task.day).push(task);
+      }
+      for(const [day,tasks] of daily){
+        const label=document.createElement('h4');
+        label.textContent='اليوم '+day;
+        section.append(label);
+        for(const task of tasks){
+          const question=document.createElement('div');
+          question.className='secure-card';
+          const prompt=document.createElement('p');
+          prompt.lang='en';prompt.dir='auto';prompt.textContent=task.prompt;
+          question.append(prompt);
+          if(task.submitted){
+            const result=document.createElement('p');
+            result.textContent=task.reviewed?'النتيجة '+task.score+' / 100':'سُلّم وبانتظار المراجعة';
+            question.append(result);
+            if(task.feedback){
+              const feedback=document.createElement('p');
+              feedback.textContent=task.feedback;
+              question.append(feedback);
+            }
+            if(task.media)question.append(learningMediaButton(task.media,code));
+          }else{
+            const answer=document.createElement('form');
+            const speaking=task.skill==='speaking';
+            const writing=task.skill==='writing';
+            answer.innerHTML=(speaking?'':('<label>الإجابة<textarea name="response" lang="en" dir="auto" maxlength="6000" '+(writing?'':'required')+'></textarea></label>'))+
+              (speaking||writing?'<label>'+ (speaking?'التسجيل الصوتي':'ملف PDF اختياري')+'<input type="file" name="upload" accept="'+(speaking?'.mp3,.ogg,.wav,.m4a,.webm':'.pdf')+'" '+(speaking?'required':'')+'></label>':'')+
+              button('تسليم')+'<p role="status"></p>';
+            const submit=answer.querySelector('button');
+            const status=answer.querySelector('[role="status"]');
+            answer.onsubmit=async event=>{
+              event.preventDefault();
+              const fields=new FormData(answer);
+              submit.disabled=true;
+              try{
+                const media=await readLearningFile(fields.get('upload'));
+                const result=await checked(client.rpc('hub_submit_learning_task',{p_token:code?.token??null,p_task:task.id,
+                  p_response:fields.get('response'),...media}));
+                if(!result)throw new Error('انتهت جلسة الدخول.');
+                status.textContent=result.reviewed?'حُفظت الدرجة: '+result.score+' / 100':'تم تسليم المشاركة.';
+                if(version===viewVersion)await studentLoad(code);
+              }catch(error){status.textContent=error.message;submit.disabled=false}
+            };
+            question.append(answer);
+          }
+          section.append(question);
+        }
+      }
+      target.append(section);
+    }
+    const board=$('myHonorDetails');
+    if(board){
+      board.innerHTML=table(['القسم','العنوان','الوصف','تاريخ الأسبوع'],data.honors.map(h=>[sections[h.category]?.[1],h.title,h.description,h.week_start]));
+      for(const honor of data.honors.filter(h=>h.media||h.legacy&&!code)){
+        const row=document.createElement('p');
+        row.append(document.createTextNode(honor.title+' '),honor.media?learningMediaButton(honor.media,code):resourceButton('honors',honor.id));
+        board.append(row);
+      }
+    }
+  }catch(error){if(target.isConnected)target.textContent='تعذّر تحميل تدريبات الخطط.'}
+}
+
 async function teacherLoad(){
   const version=viewVersion;
   const [classes,students,activities,submissions,plans,honors,inbox,archives]=await Promise.all([
-    rows('school_classes','id,name,course,grade_level'),rows('students','id,full_name,class_id,active'),
+    rows('school_classes','id,name,course,grade_level,archived_at'),rows('students','id,full_name,class_id,active'),
     rows('activities','id,title,kind,course,unit_no,skill,max_score,max_attempts,published,activity_targets(class_id)'),
     rows('submissions','id,student_id,activity_id,score,submitted_at,status,attempt'),
-    rows('hub_plans','id,student_id,kind,title,instructions,due_on,completed'),
-    rows('honors','id,student_id,category,title,description,week_start'),
+    rows('hub_plans','id,student_id,kind,title,instructions,due_on,completed,unit_no,skill'),
+    rows('honors','id,student_id,category,title,description,week_start,archived_at'),
     rows('parent_messages','id,student_id,message,teacher_reply,created_at'),
     rows('semester_archives','id,label,archived_at')
   ]);
@@ -129,7 +264,7 @@ async function teacherLoad(){
   const className=id=>classes.find(x=>x.id===id)?.name||'—';
   const studentName=id=>students.find(x=>x.id===id)?.full_name||'—';
   const activityName=id=>activities.find(x=>x.id===id)?.title||'—';
-  const classOptions=options(classes,x=>x.name);
+  const classOptions=options(classes.filter(c=>!c.archived_at),x=>x.name);
   const studentOptions=options(students,x=>x.full_name+' — '+className(x.class_id));
   const activeOptions=options(students.filter(x=>x.active),x=>x.full_name+' — '+className(x.class_id));
   const today=new Date().toISOString().slice(0,10);
@@ -141,17 +276,50 @@ async function teacherLoad(){
   const activityForm=card('إنشاء اختبار',form('newActivity',fields('title','العنوان','maxlength="160"')+select('classId','الفصل',classOptions)+select('kind','النوع',options(kinds,x=>x.name))+fields('unit','الوحدة','type="number" min="1" max="20"')+fields('attempts','المحاولات','type="number" min="1" max="20" value="1"')+
     '<label>المهارة <input name="skill" maxlength="80"></label><div id="questions"></div><button type="button" class="action secondary" id="addQuestion">إضافة سؤال</button> ','حفظ مسودة'));
   const publishing=card('النشر',form('publishActivity',select('id','النشاط',options(activities,x=>x.title))+select('published','الحالة','<option value="true">نشر</option><option value="false">إيقاف النشر</option>')));
-  const reportCard=card('تقرير التسليمات',table(reports[0],reports.slice(1))+button('تصدير CSV').replace('<button','<button id="exportResults"'));
+  const filter = (id,label,values,name) => `<label>${label} <select id="${id}"><option value="">الكل</option>${options(values,name)}</select></label>`;
+  const reportCard=card('تقارير الدرجات والإنجاز',
+    '<div class="secure-grid" id="reportFilters">'+
+      filter('reportClass','الفصل',classes,x=>x.name)+
+      filter('reportStudent','الطالبة',students,x=>x.full_name+' — '+className(x.class_id))+
+      filter('reportUnit','الوحدة',[...new Set(activities.map(x=>x.unit_no).filter(x=>x!=null))].sort((a,b)=>a-b).map(x=>({id:String(x),name:String(x)})),x=>x.name)+
+      filter('reportSkill','المهارة',[...new Set(activities.map(x=>x.skill).filter(Boolean))].sort().map(x=>({id:x,name:x})),x=>x.name)+
+    '</div><div id="reportSummary" aria-live="polite"></div><div class="report-chart" id="reportChart"></div>'+
+    '<div id="reportCoverage"></div><div id="reportRows"></div><div id="reportProgress"></div>'+
+    '<div class="flex" style="gap:.5rem"><button type="button" class="action" id="exportResults">تصدير Excel</button>'+
+    '<button type="button" class="action secondary" id="exportResultsCsv">تصدير CSV</button>'+
+    '<button type="button" class="action secondary" id="printResults">طباعة</button></div>');
+  const reportDate = value => value ? new Intl.DateTimeFormat('ar-SA',{dateStyle:'short',timeStyle:'short'}).format(new Date(value)) : '—';
   const archive=card('أرشيف الفصل الدراسي',form('newArchive',fields('label','اسم الفصل الدراسي','maxlength="100"'),'حفظ لقطة من التقرير')+
     table(['الاسم','التاريخ'],archives.map(x=>[x.label,x.archived_at]))+
     form('getArchive',select('id','الأرشيف',options(archives,x=>x.label)),'تنزيل الأرشيف'));
-  const plansSection=kind=>card(kind==='remedial'?'الخطط العلاجية':'الخطط الإثرائية',
-    form('newPlan',select('student_id','الطالبة',activeOptions)+fields('title','العنوان','maxlength="160"')+fields('due_on','الموعد','type="date" value="'+today+'"')+'<label>التعليمات <textarea name="instructions" required maxlength="4000"></textarea></label>')+
-    table(['الطالبة','الخطة','الموعد','الحالة'],plans.filter(x=>x.kind===kind).map(x=>[studentName(x.student_id),x.title,x.due_on,x.completed?'مكتملة':'قيد التنفيذ']))+
-    form('completePlan',select('id','الخطة',options(plans.filter(x=>x.kind===kind&&!x.completed),x=>studentName(x.student_id)+' — '+x.title)),'تسجيل الإنجاز'));
+  const plansSection=kind=>{
+    const remedial=kind==='remedial';
+    const taskFields=remedial?
+      '<label>المفردات<textarea name="vocabulary" lang="en" dir="ltr" required maxlength="6000" placeholder="word | meaning"></textarea></label>'+
+      '<label>تمارين القواعد<textarea name="grammar" lang="en" dir="ltr" required maxlength="3600" placeholder="question | answer"></textarea></label>'+
+      '<p class="muted">أضيفي 12 كلمة، كلمة ومعناها في كل سطر. تُوزّع أربع كلمات يوميًا على ثلاثة أيام، ثم تمرين قواعد في كل يوم من اليومين أو الأيام الثلاثة التالية.</p>':
+      select('mode','نوع التدريب','<option value="reading">قراءة</option><option value="listening">استماع</option><option value="speaking">تحدث</option><option value="writing">كتابة</option>')+
+      '<label>المحتوى الإنجليزي<textarea name="practice" lang="en" dir="auto" required maxlength="6000"></textarea></label>'+
+      '<p class="muted">في القراءة والاستماع، اكتبي كل سؤال وإجابته في سطر بينهما |. في الكتابة والتحدث اكتبي المهمة التي ستراجعينها بعد التسليم.</p>';
+    return card(remedial?'الخطط العلاجية':'الخطط الإثرائية',
+      form('newPlan','<label>طالبة محددة<select name="student_id"><option value="">اختاري طالبة</option>'+activeOptions+'</select></label>'+
+        '<label>أو فصل كامل<select name="class_id"><option value="">اختاري فصلًا</option>'+classOptions+'</select></label>'+
+        fields('title','العنوان','maxlength="160"')+fields('due_on','الموعد','type="date" value="'+today+'"')+
+        fields('unit','الوحدة','type="number" min="1" max="20"')+fields('skill','المهارة','maxlength="80"')+
+        '<label>التعليمات <textarea name="instructions" required maxlength="4000"></textarea></label>'+taskFields,'إسناد الخطة')+
+      table(['الطالبة','الفصل','الخطة','الوحدة','المهارة','الموعد','الحالة'],plans.filter(x=>x.kind===kind).map(x=>[
+        studentName(x.student_id),className(students.find(s=>s.id===x.student_id)?.class_id),x.title,x.unit_no,x.skill,x.due_on,x.completed?'مكتملة':'قيد التنفيذ']))+
+      form('completePlan',select('id','الخطة',options(plans.filter(x=>x.kind===kind&&!x.completed),x=>studentName(x.student_id)+' — '+x.title)),'تسجيل الإنجاز')+
+      '<div id="learningReviews"><p>جارٍ تحميل سجل التقييم.</p></div>');
+  };
+  const honorItems=honors.filter(x=>x.category===current);
   const honorsSection=()=>card(sections[current][1],
     form('newHonor',select('student_id','الطالبة',activeOptions)+fields('title','العنوان','maxlength="160"')+fields('week_start','تاريخ الأسبوع','type="date" value="'+today+'"')+'<label>وصف الإنجاز أو نص العمل <textarea name="description" maxlength="4000"></textarea></label>','اعتماد وإتاحة للطالبة والأسرة')+
-    table(['الطالبة','العنوان','التاريخ','العمل'],honors.filter(x=>x.category===current).map(x=>[studentName(x.student_id),x.title,x.week_start,x.description])));
+    '<label>تصفية حسب الفصل<select id="honorClass"><option value="">كل الفصول</option>'+classOptions+'</select></label><div id="honorRows"></div>'+
+    form('archiveHonor',select('id','التكريم',options(honorItems.filter(x=>!x.archived_at),x=>studentName(x.student_id)+' — '+x.title)),'أرشفة التكريم')+
+    form('restoreHonor',select('id','التكريم المؤرشف',options(honorItems.filter(x=>x.archived_at),x=>studentName(x.student_id)+' — '+x.title)),'استعادة التكريم')+
+    form('attachHonorMedia',select('id','التكريم',options(honorItems.filter(x=>!x.archived_at),x=>studentName(x.student_id)+' — '+x.title))+
+      fields('file','صورة مصرح بها أو فيديو MP4 قصير (حتى 1.5 ميغابايت)','type="file" accept=".jpg,.jpeg,.png,.mp4"'),'رفع المرفق'));
   let body='';
   switch(current){
     case 0:
@@ -164,11 +332,20 @@ async function teacherLoad(){
         return [a.title,roster.length,submitted,roster.length-submitted];
       })));
       break;
-    case 1:
-      body=`<div class="secure-grid">${card('إضافة فصل',form('addClass',fields('name','اسم الفصل','maxlength="100"')+select('course','المقرر','<option>Mega Goal 1</option><option>Mega Goal 3</option>')+select('grade_level','المرحلة','<option>أول ثانوي</option><option>ثالث ثانوي</option>')))}${card('إضافة طالبة',form('addStudent',fields('full_name','الاسم','maxlength="160"')+select('class_id','الفصل',classOptions)))}</div>`+
-      card('الطالبات',table(['الاسم','الفصل','الحالة'],students.map(x=>[x.full_name,className(x.class_id),x.active?'نشطة':'موقوفة'])))+
-      card('تعديل بيانات طالبة',form('editStudent',select('id','الطالبة',studentOptions)+fields('full_name','الاسم','maxlength="160"')+select('class_id','الفصل',classOptions)+select('active','الحالة','<option value="true">نشطة</option><option value="false">موقوفة</option>')));
+    case 1: {
+      const gradeChoices='<option>أول ثانوي</option><option>ثالث ثانوي</option>';
+      const allClassChoices=options(classes,c=>c.name+(c.archived_at?' — مؤرشف':''));
+      body=`<div class="secure-grid">${card('إضافة فصل',form('addClass',fields('name','اسم الفصل','maxlength="100"')+select('grade_level','المرحلة',gradeChoices)))}${card('إضافة طالبة',form('addStudent',fields('full_name','الاسم','maxlength="160"')+select('class_id','الفصل',classOptions)))}</div>`+
+      card('الفصول',table(['الفصل','المرحلة','المقرر','الحالة'],classes.map(c=>[c.name,c.grade_level,c.course,c.archived_at?'مؤرشف':'نشط']))+
+        form('editClass',select('id','الفصل',allClassChoices)+fields('name','اسم الفصل','maxlength="100"')+select('grade_level','المرحلة',gradeChoices),'تعديل الفصل')+
+        form('archiveClass',select('id','الفصل',allClassChoices)+select('archive','الإجراء','<option value="true">أرشفة (حذف من قائمة الفصول النشطة)</option><option value="false">استعادة</option>'),'تنفيذ'))+
+      card('استيراد كشف طالبات',form('previewRoster',select('classId','الفصل',classOptions)+fields('file','كشف PDF أو Excel','type="file" accept=".pdf,.xlsx"'),'معاينة الملف')+
+        '<div id="rosterPreview"></div><button type="button" class="action hidden" id="applyRoster">استيراد الأسماء</button>')+
+      card('كشف الفصل',table(['الاسم','الفصل','الحالة'],students.map(x=>[x.full_name,className(x.class_id),x.active?'نشطة':'موقوفة']))+
+        form('exportRoster',select('id','الفصل',allClassChoices)+select('format','الصيغة','<option value="xlsx">Excel</option><option value="print">طباعة</option>'),'عرض الكشف'))+
+      card('تعديل بيانات طالبة',form('editStudent',select('id','الطالبة',studentOptions)+fields('full_name','الاسم','maxlength="160"')+select('class_id','الفصل',classOptions)+select('active','الحالة','<option value="true">نشطة</option><option value="false">إيقاف (حذف من قائمة النشطات)</option>')));
       break;
+    }
     case 2: body=activityForm+publishing+activityRows(activities);break;
     case 3: body=card('فهرس أنشطة الوحدات',activityRows([...activities].sort((a,b)=>a.course.localeCompare(b.course)||(a.unit_no??0)-(b.unit_no??0))))+attachment('units',options(activities,x=>x.title));break;
     case 4: case 5:
@@ -178,8 +355,10 @@ async function teacherLoad(){
     case 12:
       body=card('دعوات الأسرة',form('issueFamily',select('id','الطالبة',activeOptions),'إصدار دعوة جديدة')+
         '<p class="muted">تنتهي الدعوة بعد 30 يومًا. أرسلي الرابط والرمز بشكل خاص وفي رسالتين منفصلتين. إصدار دعوة جديدة يلغي السابقة.</p><div id="familyInvite"></div>'+
+        form('issueClassFamily',select('id','الفصل',classOptions),'إصدار الدعوات الناقصة للفصل')+
+        '<p class="muted">تظهر رموز الفصل وروابطه عند إصدارها. تتاح الطباعة والتنزيل من هذه الشاشة. احفظي الكشف في مكان خاص.</p><div id="familyClassInvites"></div>'+
         form('revokeFamily',select('id','الطالبة',studentOptions),'إلغاء الدعوة'))+
-        card('رسائل الأسرة',table(['الطالبة','الرسالة','الرد','التاريخ'],inbox.map(x=>[studentName(x.student_id),x.message,x.teacher_reply,x.created_at]))+
+        card('رسائل الأسرة',table(['الطالبة','الرسالة','الرد','التاريخ'],inbox.map(x=>[studentName(x.student_id),x.message,x.teacher_reply,reportDate(x.created_at)]))+
           form('replyFamily',select('id','الرسالة',options(inbox,x=>studentName(x.student_id)+' — '+x.message.slice(0,60)))+fields('teacher_reply','الرد','maxlength="1000"'),'إرسال رد'));
       break;
     case 13: body=reportCard+archive;break;
@@ -207,7 +386,71 @@ async function teacherLoad(){
       $('secureBody').querySelectorAll('button,input,select,textarea').forEach(control=>control.disabled=false);
     });
   };
-  bind('addClass',data=>checked(client.from('school_classes').insert({...data,name:data.name.trim()})));
+  const manageClass=(id,name,grade,archive=null)=>checked(client.rpc('hub_manage_class',
+    {p_id:id,p_name:name,p_grade:grade,p_archive:archive}));
+  bind('addClass',({name,grade_level})=>manageClass(null,name,grade_level).then(()=> 'أُضيف الفصل'));
+  bind('editClass',({id,name,grade_level})=>manageClass(id,name,grade_level).then(()=> 'حُفظت بيانات الفصل'));
+  bind('archiveClass',({id,archive})=>manageClass(id,null,null,archive==='true').then(()=> 'حُدّثت حالة الفصل'));
+  if($('editClass'))$('editClass').elements.id.onchange=e=>{
+    const selected=classes.find(c=>c.id===e.target.value);
+    if(!selected)return;
+    $('editClass').elements.name.value=selected.name;
+    $('editClass').elements.grade_level.value=selected.grade_level;
+  };
+  const gradeName=fileGrade=>({'الأول الثانوي':'أول ثانوي','الثالث الثانوي':'ثالث ثانوي'})[fileGrade]||fileGrade;
+  if($('previewRoster')){
+    const preview=$('previewRoster');
+    const apply=$('applyRoster');
+    let pending=null;
+    let selectionVersion=0;
+    preview.onchange=()=>{
+      selectionVersion++;
+      pending=null;
+      apply.classList.add('hidden');
+      $('rosterPreview').replaceChildren();
+    };
+    bind('previewRoster',async ({classId,file})=>{
+      const version=viewVersion;
+      const selection=++selectionVersion;
+      pending=null;
+      apply.classList.add('hidden');
+      $('rosterPreview').replaceChildren();
+      const {parseRosterFile}=await import('./assets/roster-import.js');
+      const parsed=await parseRosterFile(file);
+      if(version!==viewVersion||selection!==selectionVersion)return;
+      const selected=classes.find(c=>c.id===classId);
+      const section=selected?.name.match(/[0-9٠-٩۰-۹]+/)?.[0].replace(/[٠-٩۰-۹]/g,c=>String(c.charCodeAt(0)%16));
+      const issues=[...parsed.issues];
+      if(parsed.classHint&&(gradeName(parsed.classHint.gradeLevel)!==selected.grade_level||String(parsed.classHint.section)!==section)){
+        issues.push('بيانات المرحلة أو الفصل في الكشف تختلف عن الفصل المحدد.');
+      }
+      $('rosterPreview').innerHTML=`<p>${safe(parsed.names.length)} اسمًا مقروءًا</p>`+
+        (issues.length?table(['مواضع تحتاج مراجعة'],issues.map(i=>[i])):'');
+      if(issues.length||!parsed.names.length)return 'راجعي معاينة الملف';
+      pending={classId,names:parsed.names};
+      apply.classList.remove('hidden');
+      return 'الكشف جاهز للاستيراد';
+    },false);
+    apply.onclick=async()=>{
+      if(!pending)return;
+      const version=viewVersion;
+      apply.disabled=true;
+      try{
+        const result=await checked(client.rpc('hub_import_roster',{p_class:pending.classId,p_names:pending.names}));
+        if(version!==viewVersion)return;
+        pending=null;
+        await teacherLoad();
+        if(version===viewVersion)info('teacherMsg',`أُضيف ${result.added}، والموجود مسبقًا ${result.existing}، والمكرر في الملف ${result.duplicates}.`);
+      }catch(error){if(version===viewVersion)info('teacherMsg',error.message,true)}
+      finally{apply.disabled=false}
+    };
+  }
+  bind('exportRoster',({id,format})=>{
+    const data=[['الاسم','الفصل','الحالة'],...students.filter(s=>s.class_id===id).map(s=>[s.full_name,className(id),s.active?'نشطة':'موقوفة'])];
+    const title='كشف '+className(id);
+    if(format==='print')printPrivateTable(title,data);
+    else downloadWorkbook('roster.xlsx',title,data);
+  },false);
   bind('addStudent',async data=>{
     const {id}=await checked(client.from('students').insert({...data,full_name:data.full_name.trim().replace(/\s+/g,' ')}).select('id').single());
     try {
@@ -249,7 +492,33 @@ async function teacherLoad(){
     return checked(client.rpc('hub_create_activity',{p_title:data.title,p_class:data.classId,p_kind:data.kind,p_unit:Number(data.unit),p_skill:data.skill,p_attempts:Number(data.attempts),p_questions:questions})).then(()=> 'حُفظ الاختبار كمسودة');
   });
   bind('publishActivity',({id,published})=>checked(client.from('activities').update({published:published==='true'}).eq('id',id)));
-  bind('newPlan',data=>checked(client.from('hub_plans').insert({...data,kind:current===4?'remedial':'enrichment'})));
+  bind('newPlan',async data=>{
+    if(Boolean(data.class_id)===Boolean(data.student_id))throw new Error('اختاري فصلًا كاملًا أو طالبة واحدة.');
+    const count=await checked(client.rpc('hub_assign_learning_plan',{p_class:data.class_id||null,p_student:data.student_id||null,
+      p_kind:current===4?'remedial':'enrichment',p_title:data.title,p_instructions:data.instructions,p_due:data.due_on,
+      p_unit:Number(data.unit),p_skill:data.skill,p_tasks:learningTasks(data,current===4)}));
+    return 'أُسندت الخطة لعدد '+count+' من الطالبات.';
+  });
+  if($('learningReviews'))void loadLearningReviews(current===4?'remedial':'enrichment',studentName,version);
+  if($('honorRows')){
+    const renderHonors=()=>{
+      const classId=$('honorClass').value;
+      const displayed=honorItems.filter(h=>!classId||students.find(s=>s.id===h.student_id)?.class_id===classId);
+      const rowsFor=items=>items.map(h=>[studentName(h.student_id),className(students.find(s=>s.id===h.student_id)?.class_id),h.title,h.week_start,h.description]);
+      const columns=['الطالبة','الفصل','العنوان','الأسبوع','العمل'];
+      $('honorRows').innerHTML='<h4>التكريمات المعتمدة</h4>'+table(columns,rowsFor(displayed.filter(h=>!h.archived_at)))+
+        '<h4>الأرشيف</h4>'+table(columns,rowsFor(displayed.filter(h=>h.archived_at)));
+    };
+    $('honorClass').onchange=renderHonors;
+    renderHonors();
+  }
+  bind('archiveHonor',({id})=>checked(client.from('honors').update({archived_at:new Date().toISOString()}).eq('id',id)));
+  bind('restoreHonor',({id})=>checked(client.from('honors').update({archived_at:null}).eq('id',id)));
+  bind('attachHonorMedia',async ({id,file})=>{
+    const uploaded=await readLearningFile(file);
+    if(!uploaded.p_base64)throw new Error('اختاري ملفًا.');
+    await checked(client.rpc('hub_attach_honor',{p_honor:id,...uploaded}));
+  });
   bind('completePlan',({id})=>checked(client.from('hub_plans').update({completed:true}).eq('id',id)));
   bind('newHonor',data=>checked(client.from('honors').insert({...data,category:current,public_visible:false})));
   bind('issueFamily',async ({id})=>{
@@ -258,9 +527,112 @@ async function teacherLoad(){
     displayInvite('familyInvite','family',result);
     return 'صدرت الدعوة';
   },false);
+
+  bind('issueClassFamily',async ({id})=>{
+    const pageVersion=viewVersion;
+    const issued=await checked(client.rpc('hub_issue_class_family',{p_class:id}));
+    if(pageVersion!==viewVersion||!$('familyClassInvites'))return;
+    const container=$('familyClassInvites');
+    if(!issued.length){
+      container.replaceChildren();
+      return 'لا توجد دعوات ناقصة لطالبات الفصل النشطات.';
+    }
+    const rows=[['الطالبة','الرمز الرباعي','رابط بوابة الأسرة'],...issued
+      .sort((a,b)=>a.name.localeCompare(b.name,'ar'))
+      .map(x=>[x.name,x.pin,new URL('#family='+x.invite,new URL(location.pathname,location.origin)).href])];
+    const title='دعوات الأسرة — '+className(id);
+    container.innerHTML=table(rows[0],rows.slice(1))+
+      '<div class="flex" style="gap:.5rem"><button type="button" class="action" id="exportFamilyClass">تصدير Excel</button>'+
+      '<button type="button" class="action secondary" id="printFamilyClass">طباعة الكشف</button></div>';
+    $('exportFamilyClass').onclick=()=>downloadWorkbook('family-invitations.xlsx',title,rows);
+    $('printFamilyClass').onclick=()=>printPrivateTable(title,rows);
+    return 'صدرت '+issued.length+' دعوة.';
+  },false);
   bind('revokeFamily',({id})=>checked(client.rpc('teacher_revoke_parent_pin',{p_student_id:id})).then(()=> 'أُلغيَت الدعوة'));
   bind('replyFamily',({id,teacher_reply})=>checked(client.from('parent_messages').update({teacher_reply}).eq('id',id)));
-  if($('exportResults'))$('exportResults').onclick=()=>exportCsv(reports);
+  if($('reportFilters')){
+    const classesById=new Map(classes.map(x=>[x.id,x]));
+    const studentById=new Map(students.map(x=>[x.id,x]));
+    const activitiesById=new Map(activities.map(x=>[x.id,x]));
+    const targetClasses=new Map(activities.map(a=>[a.id,new Set(a.activity_targets.map(t=>t.class_id))]));
+    const targetStudents=new Map(activities.map(a=>[a.id,new Set((a.activity_student_targets||[]).map(t=>t.student_id))]));
+    const activityStudents=new Map();
+    for(const x of submissions){
+      if(!activityStudents.has(x.activity_id))activityStudents.set(x.activity_id,new Set());
+      activityStudents.get(x.activity_id).add(x.student_id);
+    }
+    const reportHeaders=['الطالبة','الفصل','النشاط','الوحدة','المهارة','المحاولة','الدرجة','من','الحالة','التاريخ'];
+    const coverageHeaders=['النشاط','الوحدة','المهارة','المكلّفات','سلّمن','لم يسلّمن'];
+    const progressHeaders=['الطالبة','الفصل','الخطط','الخطط المكتملة','التكريمات والمشاركات المعتمدة'];
+    let reportRows=[];
+    let coverageRows=[];
+    let progressRows=[];
+    const statusText={submitted:'بانتظار المراجعة',reviewed:'رُوجع',returned:'أُعيد للطالبة'};
+    function renderReport(){
+      const classId=$('reportClass').value;
+      const studentId=$('reportStudent').value;
+      const unit=$('reportUnit').value;
+      const skill=$('reportSkill').value;
+      const scope=students.filter(s=>(!classId||s.class_id===classId)&&(!studentId||s.id===studentId));
+      const roster=new Set(scope.map(s=>s.id));
+      const scheduled=activities.filter(a=>(!unit||String(a.unit_no)===unit)&&(!skill||a.skill===skill));
+      const selectedActivities=new Set(scheduled.map(a=>a.id));
+      const selectedSubmissions=submissions.filter(x=>roster.has(x.student_id)&&selectedActivities.has(x.activity_id));
+      const latest=new Map();
+      for(const item of selectedSubmissions){
+        if(item.score==null||!['reviewed','returned'].includes(item.status))continue;
+        const key=item.student_id+':'+item.activity_id;
+        if(!latest.has(key)||latest.get(key).attempt<item.attempt)latest.set(key,item);
+      }
+      const gradeRatios=[...latest.values()].map(item=>{
+        const max=Number(activitiesById.get(item.activity_id)?.max_score);
+        return max>0?Number(item.score)/max:null;
+      }).filter(ratio=>ratio!==null);
+      const average=gradeRatios.length?Math.round(100*gradeRatios.reduce((sum,ratio)=>sum+ratio,0)/gradeRatios.length):null;
+      reportRows=selectedSubmissions.sort((a,b)=>b.submitted_at.localeCompare(a.submitted_at)).map(x=>{
+        const a=activitiesById.get(x.activity_id);
+        return [studentName(x.student_id),classesById.get(studentById.get(x.student_id)?.class_id)?.name,a?.title,a?.unit_no,a?.skill,x.attempt,x.score,a?.max_score,statusText[x.status]||x.status,reportDate(x.submitted_at)];
+      });
+      const coverage=scheduled.filter(a=>a.published).flatMap(a=>{
+        const assigned=scope.filter(s=>s.active&&(targetClasses.get(a.id).has(s.class_id)||targetStudents.get(a.id).has(s.id)));
+        if(!assigned.length)return [];
+        const submitted=activityStudents.get(a.id)||new Set();
+        const complete=assigned.filter(s=>submitted.has(s.id)).length;
+        return [{a,complete,total:assigned.length}];
+      });
+      coverageRows=coverage.map(({a,complete,total})=>[a.title,a.unit_no,a.skill,total,complete,total-complete]);
+      const scopedPlans=plans.filter(p=>roster.has(p.student_id)&&(!unit||String(p.unit_no)===unit)&&(!skill||p.skill===skill));
+      const scopedHonors=honors.filter(h=>roster.has(h.student_id));
+      progressRows=scope.map(s=>{
+        const individual=scopedPlans.filter(p=>p.student_id===s.id);
+        return [s.full_name,className(s.class_id),individual.length,individual.filter(p=>p.completed).length,scopedHonors.filter(h=>h.student_id===s.id).length];
+      });
+      const completedPlans=scopedPlans.filter(p=>p.completed).length;
+      $('reportSummary').innerHTML='<div class="secure-grid">'+
+        card('الطالبات في النطاق',String(scope.length))+card('التسليمات',String(reportRows.length))+
+        card('متوسط آخر المحاولات المعتمدة',average===null?'—':average+'٪')+
+        card('إنجاز الخطط',completedPlans+' / '+scopedPlans.length)+'</div>';
+      $('reportChart').innerHTML=coverage.length?'<h4>نسبة التسليم حسب النشاط</h4>'+coverage.map(({a,complete,total})=>{
+        const ratio=Math.round(complete*100/total);
+        return `<div class="report-bar"><span>${safe(a.title)}</span><meter min="0" max="100" value="${ratio}" aria-label="${safe(a.title)}">${ratio}٪</meter><span>${ratio}٪</span></div>`;
+      }).join(''):'';
+      $('reportCoverage').innerHTML='<h4>متابعة التسليم للأنشطة المنشورة</h4>'+table(coverageHeaders,coverageRows);
+      $('reportRows').innerHTML='<h4>سجل المحاولات</h4>'+table(reportHeaders,reportRows);
+      $('reportProgress').innerHTML='<h4>الخطط والمشاركات حسب الطالبة</h4><p class="muted">يشمل عدد المشاركات كامل الفترة للطالبة أو الفصل المختار.</p>'+table(progressHeaders,progressRows);
+    }
+    $('reportClass').onchange=()=>{
+      const previous=$('reportStudent').value;
+      const selected=$('reportClass').value;
+      $('reportStudent').innerHTML='<option value="">الكل</option>'+options(students.filter(s=>!selected||s.class_id===selected),x=>x.full_name);
+      if([...$('reportStudent').options].some(o=>o.value===previous))$('reportStudent').value=previous;
+      renderReport();
+    };
+    for(const control of $('reportFilters').querySelectorAll('select:not(#reportClass)'))control.onchange=renderReport;
+    $('exportResults').onclick=()=>downloadWorkbook('hub-report.xlsx','تقرير النتائج',[reportHeaders,...reportRows,[],coverageHeaders,...coverageRows,[],progressHeaders,...progressRows]);
+    $('exportResultsCsv').onclick=()=>exportCsv([reportHeaders,...reportRows]);
+    $('printResults').onclick=()=>printPrivateTable('تقرير التسليمات',[reportHeaders,...reportRows]);
+    renderReport();
+  }
   bind('newArchive',({label})=>checked(client.from('semester_archives').insert({label:label.trim(),snapshot:{reports}})));
   bind('getArchive',async ({id})=>{
     const {snapshot}=await checked(client.from('semester_archives').select('snapshot').eq('id',id).single());
@@ -279,16 +651,69 @@ async function teacherLoad(){
     const version=viewVersion;
     const codes=await checked(client.rpc('hub_issue_class_codes',{p_class:id}));
     if(version!==viewVersion||!$('studentInvite'))return;
-    $('studentInvite').innerHTML=table(['الطالبة','رمز الدخول'],codes.map(c=>[c.name,c.pin]));
+    const data=[['الطالبة','رمز الدخول'],...codes.map(c=>[c.name,c.pin])];
+    const zone=$('studentInvite');
+    zone.innerHTML=table(data[0],data.slice(1));
+    if(codes.length){
+      const title='رموز '+className(id);
+      for(const [label,action] of [
+        ['تنزيل Excel',()=>downloadWorkbook('student-codes.xlsx',title,data)],
+        ['طباعة الرموز',()=>printPrivateTable(title,data)]
+      ]){
+        const control=document.createElement('button');
+        control.type='button';control.className='action secondary';control.textContent=label;
+        control.onclick=action;zone.append(control);
+      }
+    }
     return codes.length?'صدرت '+codes.length+' رموز':'كل طالبات الفصل النشطات لديهن رموز سارية.';
   },false);
   bind('revokeStudentCode',({id})=>checked(client.rpc('hub_revoke_student_code',{p_student:id})).then(()=> 'أُلغي رمز الطالبة'));
   bind('linkStudent',({id,email})=>checked(client.rpc('hub_link_student',{p_student_id:id,p_email:email})));
 }
+async function loadLearningReviews(kind,studentName,version){
+  const root=$('learningReviews');
+  try{
+    const reviews=[];
+    for(let from=0;;from+=500){
+      const batch=await checked(client.rpc('hub_learning_reviews',{p_kind:kind}).range(from,from+499));
+      if(version!==viewVersion||!root.isConnected)return;
+      reviews.push(...batch);
+      if(batch.length<500)break;
+    }
+    if(version!==viewVersion||!root.isConnected)return;
+    const manual=reviews.filter(x=>['writing','speaking'].includes(x.skill));
+    root.innerHTML=card('سجل التقييم وتحسّن الأداء',
+      table(['الطالبة','الخطة','المهارة','السؤال','النتيجة','ملحوظة'],reviews.map(x=>[
+        studentName(x.student_id),x.title,labels[x.skill]||x.skill,x.prompt,x.score==null?'بانتظار المراجعة':x.score+' / 100',x.feedback]))+
+      (manual.length?form('reviewLearning',select('task','المشاركة',options(manual,x=>studentName(x.student_id)+' — '+x.title+' — '+x.prompt.slice(0,50)))+
+        '<div id="reviewLearningResponse"></div>'+fields('score','الدرجة من 100','type="number" min="0" max="100"')+
+        '<label>التغذية الراجعة<textarea name="feedback" maxlength="1500"></textarea></label>','اعتماد التقييم'):''));
+    if(!$('reviewLearning'))return;
+    const selectTask=$('reviewLearning').elements.task;
+    selectTask.onchange=()=>{
+      const item=manual.find(x=>x.id===selectTask.value);
+      const response=$('reviewLearningResponse');
+      response.replaceChildren();
+      if(!item)return;
+      const prompt=document.createElement('p');
+      prompt.textContent=item.prompt;
+      const answer=document.createElement('p');
+      answer.textContent=item.response||'';
+      response.append(prompt,answer);
+      if(item.media)response.append(learningMediaButton(item.media,null));
+      $('reviewLearning').elements.score.value=item.score??'';
+      $('reviewLearning').elements.feedback.value=item.feedback??'';
+    };
+    bind('reviewLearning',({task,score,feedback})=>checked(client.rpc('hub_review_learning_task',{
+      p_task:task,p_score:Number(score),p_feedback:feedback})));
+  }catch(error){if(root.isConnected)root.textContent='تعذّر تحميل سجل التقييم.'}
+}
 async function adminLoad(){
   const summary=await checked(client.rpc('hub_admin_summary'));
   $('secureTitle').textContent='ملخص الإدارة';
-  $('secureBody').innerHTML=table(['الفصول','الطالبات النشطات','الأنشطة المنشورة','التسليمات'],[[summary.classes,summary.students,summary.activities,summary.submissions]]);
+  $('secureBody').innerHTML=table(['الفصول','الطالبات النشطات','الأنشطة المنشورة','التسليمات'],[[summary.classes,summary.students,summary.activities,summary.submissions]])+
+    card('إحصائيات الفصول',table(['الفصل','المقرر','الطالبات النشطات','التسليمات','الخطط المكتملة','إجمالي الخطط'],
+      (summary.class_totals||[]).map(x=>[x.name,x.course,x.students,x.submissions,x.completed_plans,x.plans])));
 }
 async function studentLoad(code=null,dashboard=null){
  const version=viewVersion;
@@ -297,18 +722,14 @@ async function studentLoad(code=null,dashboard=null){
  if(error)throw error;
  if(version!==viewVersion)return;
  if(!data)throw new Error('تعذّر الدخول. تحققي من الرابط والرمز أو أعيدي المحاولة لاحقًا.');
-const student=data?.student||{};const activities=data?.activities||[];const results=data?.results||[];$('secureTitle').textContent='🌸 بوابة الطالبة';$('secureBody').innerHTML=`<div class="secure-card"><h3>مرحبًا ${safe(student.full_name||student.name||'بكِ')}</h3><p>${safe(student.class_name||'')}</p></div><h3>أنشطتي</h3><div id="myActivities"></div><h3>درجاتي</h3><div id="myResults"></div>`+
+const student=data?.student||{};const activities=data?.activities||[];const results=data?.results||[];$('secureTitle').textContent='🌸 بوابة الطالبة';$('secureBody').innerHTML=`<div class="secure-card"><h3>مرحبًا ${safe(student.full_name||student.name||'بكِ')}</h3><p>${safe(student.class_name||'')}</p></div><h3>أنشطتي</h3><div id="myActivities"></div><h3>درجاتي</h3><div id="myResults"></div><div id="myLearning"></div>`+
 card('مكتبة الوحدات',table(['الوحدة','النشاط','المهارة'],[...activities].sort((a,b)=>(a.unit??0)-(b.unit??0)).map(a=>[a.unit,a.title,a.skill])))+
 ['remedial','enrichment'].map(kind=>card(kind==='remedial'?'خططي العلاجية':'خططي الإثرائية',
 table(['الخطة','التعليمات','الموعد','الحالة'],(data.plans||[]).filter(x=>x.kind===kind).map(x=>[x.title,x.instructions,x.due_on,x.completed?'مكتملة':'قيد التنفيذ'])))).join('')+
-card('التكريم والأعمال المعتمدة',table(['القسم','العنوان','الوصف','تاريخ الأسبوع'],(data.honors||[]).map(x=>[sections[x.category]?.[1],x.title,x.description,x.week_start])));
-for(const h of (data.honors||[]).filter(x=>x.resource&&!code)){
-  const box=document.createElement('div');
-  box.append(document.createTextNode(h.title+' '),resourceButton('honors',h.id));
-  $('secureBody').append(box);
-}
+card('التكريم والأعمال المعتمدة','<div id="myHonorDetails">جارٍ التحميل…</div>');
 for(const a of activities){const box=document.createElement('div');box.className='secure-card';const title=document.createElement('h3');title.textContent=a.title||'نشاط';box.append(title);if(a.resource&&!code)box.append(resourceButton('units',a.id));const form=document.createElement('form');const questions=Array.isArray(a.questions)?a.questions:(Array.isArray(a.answer_key?.questions)?a.answer_key.questions:[]);if(a.attempts_used>=a.max_attempts){box.append('اكتملت المحاولات المتاحة.');$('myActivities').append(box);continue}if(!questions.length){const p=document.createElement('p');p.textContent='لا توجد أسئلة متاحة لهذا النشاط حاليًا.';box.append(p);$('myActivities').append(box);continue}questions.forEach((q,i)=>{const field=document.createElement('fieldset');const legend=document.createElement('legend');legend.textContent=q.question||q.prompt||'Question '+(i+1);field.append(legend);(q.options||q.choices||[]).forEach((opt,j)=>{const lab=document.createElement('label');lab.className='quiz-option';const input=document.createElement('input');input.type='radio';input.name='q'+i;input.value=String(j);input.required=true;lab.append(input,document.createTextNode(' '+(typeof opt==='string'?opt:opt.text||String(opt))));field.append(lab)});form.append(field)});const btn=document.createElement('button');btn.className='action';btn.textContent='تسليم النشاط';form.append(btn);const status=document.createElement('p');form.onsubmit=async e=>{e.preventDefault();const fd=new FormData(form);const answers=Object.fromEntries(questions.map((q,i)=>[q.id,String((q.options||q.choices||[])[Number(fd.get('q'+i))]) ]));btn.disabled=true;const {data:res,error:err}=await request('student_submit_quiz',code?{p_activity:a.id,p_answers:answers}:{p_activity_id:a.id,p_answers:answers});if(version!==viewVersion)return;if(err||!res){status.textContent=err?'تعذّر التسليم: '+err.message:'انتهت صلاحية الدخول. أعيدي فتح رابط الدعوة.';btn.disabled=false;return}status.textContent='تم حفظ الدرجة: '+res.score+' / '+res.max_score;await studentLoad(code).catch(error=>{if(version===viewVersion)box.append(document.createTextNode(error.message))})};box.append(form,status);$('myActivities').append(box)}
 $('myResults').innerHTML=results.length?results.map(r=>`<p>${safe(r.activity||r.title||'نشاط')} — <b>${safe(r.score)} / ${safe(r.max_score)}</b></p>`).join(''):'<p>لا توجد درجات مسجلة.</p>';
+void renderLearningTasks(code,version);
 }
 let familyInvite='';
 function readFamilyInvite(){
@@ -354,8 +775,14 @@ function openFamily(){
       }
       info('familyStatus',message?'أُرسلت الرسالة':'');
       form.hidden=true;
-      $('familyData').innerHTML=`<h3>${safe(data.student.name)}</h3><p>${safe(data.student.class_name)}</p>`+
-        card('النتائج',table(['النشاط','الدرجة','من','التاريخ'],data.results.map(x=>[x.title,x.score,x.max_score,x.submitted_at])))+
+      $('familyData').innerHTML=`<h3>${safe(data.student.name)}</h3><p>${safe(data.student.grade_level)} — ${safe(data.student.class_name)} — ${safe(data.student.course)}</p>`+
+        card('الواجبات والأنشطة',table(['النشاط','الوحدة','المهارة','التسليم'],(data.activities||[])
+          .map(x=>[x.title,x.unit_no,x.skill,x.submitted?'سُلّم':'لم يُسلّم'])))+
+        card('الخطط العلاجية والإثرائية',table(['الخطة','المسار','الوحدة','المهارة','الإرشادات','موعد الإنجاز','الحالة'],(data.plans||[])
+          .map(x=>[x.title,labels[x.kind]||x.kind,x.unit_no,x.skill,x.instructions,x.due_on,x.completed?'مكتملة':'قيد التنفيذ'])))+
+        card('النتائج المعتمدة',table(['النشاط','الدرجة','من','التاريخ'],data.results.map(x=>[
+          x.title,x.score,x.max_score,new Intl.DateTimeFormat('ar-SA',{dateStyle:'short',timeStyle:'short'}).format(new Date(x.submitted_at))
+        ])))+
         card('التكريم',table(['العنوان','التاريخ'],data.honors.map(x=>[x.title,x.week_start])))+
         card('مراسلة المعلمة',table(['الرسالة','الرد'],data.messages.map(x=>[x.message,x.teacher_reply]))+
           '<form id="sendFamily"><label>رسالة <textarea name="message" required maxlength="1000"></textarea></label><button class="action">إرسال</button></form>')+
