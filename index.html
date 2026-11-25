@@ -250,7 +250,7 @@ async function renderLearningTasks(code,version){
 
 async function teacherLoad(){
   const version=viewVersion;
-  const [classes,students,activities,submissions,plans,honors,inbox,archives]=await Promise.all([
+  const [allClasses,allStudents,allActivities,allSubmissions,allPlans,allHonors,allMessages,archives]=await Promise.all([
     rows('school_classes','id,name,course,grade_level,archived_at'),rows('students','id,full_name,class_id,active'),
     rows('activities','id,title,kind,course,unit_no,skill,max_score,max_attempts,published,activity_targets(class_id),activity_student_targets(student_id)'),
     rows('submissions','id,student_id,activity_id,score,submitted_at,status,attempt'),
@@ -260,6 +260,21 @@ async function teacherLoad(){
     rows('semester_archives','id,label,archived_at')
   ]);
   if(version!==viewVersion)return;
+  const demoNames=new Set(['أول ثانوي - تجريبي','ثالث ثانوي - تجريبي']);
+  const hiddenClasses=new Set(allClasses.filter(c=>c.archived_at&&demoNames.has(c.name)).map(c=>c.id));
+  const hiddenStudents=new Set(allStudents.filter(s=>hiddenClasses.has(s.class_id)).map(s=>s.id));
+  const classes=allClasses.filter(c=>!hiddenClasses.has(c.id));
+  const students=allStudents.filter(s=>!hiddenStudents.has(s.id));
+  const activities=allActivities.flatMap(activity=>{
+    const classTargets=activity.activity_targets.filter(t=>!hiddenClasses.has(t.class_id));
+    const studentTargets=activity.activity_student_targets.filter(t=>!hiddenStudents.has(t.student_id));
+    if ((activity.activity_targets.length||activity.activity_student_targets.length)&&!classTargets.length&&!studentTargets.length) return [];
+    return [{...activity,activity_targets:classTargets,activity_student_targets:studentTargets}];
+  });
+  const submissions=allSubmissions.filter(s=>!hiddenStudents.has(s.student_id));
+  const plans=allPlans.filter(p=>!hiddenStudents.has(p.student_id));
+  const honors=allHonors.filter(h=>!hiddenStudents.has(h.student_id));
+  const inbox=allMessages.filter(m=>!hiddenStudents.has(m.student_id));
   const current=teacherSection;
   const className=id=>classes.find(x=>x.id===id)?.name||'—';
   const studentName=id=>students.find(x=>x.id===id)?.full_name||'—';
