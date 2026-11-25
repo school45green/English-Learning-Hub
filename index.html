@@ -116,7 +116,7 @@ function displayInvite(target,kind,result){
 async function teacherLoad(){
   const version=viewVersion;
   const [classes,students,activities,submissions,plans,honors,inbox,archives]=await Promise.all([
-    rows('school_classes','id,name,course,grade_level'),rows('students','id,full_name,class_id,active'),
+    rows('school_classes','id,name,course,grade_level,archived_at'),rows('students','id,full_name,class_id,active'),
     rows('activities','id,title,kind,course,unit_no,skill,max_score,max_attempts,published,activity_targets(class_id)'),
     rows('submissions','id,student_id,activity_id,score,submitted_at,status,attempt'),
     rows('hub_plans','id,student_id,kind,title,instructions,due_on,completed'),
@@ -129,7 +129,7 @@ async function teacherLoad(){
   const className=id=>classes.find(x=>x.id===id)?.name||'—';
   const studentName=id=>students.find(x=>x.id===id)?.full_name||'—';
   const activityName=id=>activities.find(x=>x.id===id)?.title||'—';
-  const classOptions=options(classes,x=>x.name);
+  const classOptions=options(classes.filter(c=>!c.archived_at),x=>x.name);
   const studentOptions=options(students,x=>x.full_name+' — '+className(x.class_id));
   const activeOptions=options(students.filter(x=>x.active),x=>x.full_name+' — '+className(x.class_id));
   const today=new Date().toISOString().slice(0,10);
@@ -164,11 +164,20 @@ async function teacherLoad(){
         return [a.title,roster.length,submitted,roster.length-submitted];
       })));
       break;
-    case 1:
-      body=`<div class="secure-grid">${card('إضافة فصل',form('addClass',fields('name','اسم الفصل','maxlength="100"')+select('course','المقرر','<option>Mega Goal 1</option><option>Mega Goal 3</option>')+select('grade_level','المرحلة','<option>أول ثانوي</option><option>ثالث ثانوي</option>')))}${card('إضافة طالبة',form('addStudent',fields('full_name','الاسم','maxlength="160"')+select('class_id','الفصل',classOptions)))}</div>`+
-      card('الطالبات',table(['الاسم','الفصل','الحالة'],students.map(x=>[x.full_name,className(x.class_id),x.active?'نشطة':'موقوفة'])))+
-      card('تعديل بيانات طالبة',form('editStudent',select('id','الطالبة',studentOptions)+fields('full_name','الاسم','maxlength="160"')+select('class_id','الفصل',classOptions)+select('active','الحالة','<option value="true">نشطة</option><option value="false">موقوفة</option>')));
+    case 1: {
+      const gradeChoices='<option>أول ثانوي</option><option>ثالث ثانوي</option>';
+      const allClassChoices=options(classes,c=>c.name+(c.archived_at?' — مؤرشف':''));
+      body=`<div class="secure-grid">${card('إضافة فصل',form('addClass',fields('name','اسم الفصل','maxlength="100"')+select('grade_level','المرحلة',gradeChoices)))}${card('إضافة طالبة',form('addStudent',fields('full_name','الاسم','maxlength="160"')+select('class_id','الفصل',classOptions)))}</div>`+
+      card('الفصول',table(['الفصل','المرحلة','المقرر','الحالة'],classes.map(c=>[c.name,c.grade_level,c.course,c.archived_at?'مؤرشف':'نشط']))+
+        form('editClass',select('id','الفصل',allClassChoices)+fields('name','اسم الفصل','maxlength="100"')+select('grade_level','المرحلة',gradeChoices),'تعديل الفصل')+
+        form('archiveClass',select('id','الفصل',allClassChoices)+select('archive','الإجراء','<option value="true">أرشفة (حذف من قائمة الفصول النشطة)</option><option value="false">استعادة</option>'),'تنفيذ'))+
+      card('استيراد كشف طالبات',form('previewRoster',select('classId','الفصل',classOptions)+fields('file','كشف PDF أو Excel','type="file" accept=".pdf,.xlsx"'),'معاينة الملف')+
+        '<div id="rosterPreview"></div><button type="button" class="action hidden" id="applyRoster">استيراد الأسماء</button>')+
+      card('كشف الفصل',table(['الاسم','الفصل','الحالة'],students.map(x=>[x.full_name,className(x.class_id),x.active?'نشطة':'موقوفة']))+
+        form('exportRoster',select('id','الفصل',allClassChoices)+select('format','الصيغة','<option value="xlsx">Excel</option><option value="print">طباعة</option>'),'عرض الكشف'))+
+      card('تعديل بيانات طالبة',form('editStudent',select('id','الطالبة',studentOptions)+fields('full_name','الاسم','maxlength="160"')+select('class_id','الفصل',classOptions)+select('active','الحالة','<option value="true">نشطة</option><option value="false">إيقاف (حذف من قائمة النشطات)</option>')));
       break;
+    }
     case 2: body=activityForm+publishing+activityRows(activities);break;
     case 3: body=card('فهرس أنشطة الوحدات',activityRows([...activities].sort((a,b)=>a.course.localeCompare(b.course)||(a.unit_no??0)-(b.unit_no??0))))+attachment('units',options(activities,x=>x.title));break;
     case 4: case 5:
@@ -207,7 +216,71 @@ async function teacherLoad(){
       $('secureBody').querySelectorAll('button,input,select,textarea').forEach(control=>control.disabled=false);
     });
   };
-  bind('addClass',data=>checked(client.from('school_classes').insert({...data,name:data.name.trim()})));
+  const manageClass=(id,name,grade,archive=null)=>checked(client.rpc('hub_manage_class',
+    {p_id:id,p_name:name,p_grade:grade,p_archive:archive}));
+  bind('addClass',({name,grade_level})=>manageClass(null,name,grade_level).then(()=> 'أُضيف الفصل'));
+  bind('editClass',({id,name,grade_level})=>manageClass(id,name,grade_level).then(()=> 'حُفظت بيانات الفصل'));
+  bind('archiveClass',({id,archive})=>manageClass(id,null,null,archive==='true').then(()=> 'حُدّثت حالة الفصل'));
+  if($('editClass'))$('editClass').elements.id.onchange=e=>{
+    const selected=classes.find(c=>c.id===e.target.value);
+    if(!selected)return;
+    $('editClass').elements.name.value=selected.name;
+    $('editClass').elements.grade_level.value=selected.grade_level;
+  };
+  const gradeName=fileGrade=>({'الأول الثانوي':'أول ثانوي','الثالث الثانوي':'ثالث ثانوي'})[fileGrade]||fileGrade;
+  if($('previewRoster')){
+    const preview=$('previewRoster');
+    const apply=$('applyRoster');
+    let pending=null;
+    let selectionVersion=0;
+    preview.onchange=()=>{
+      selectionVersion++;
+      pending=null;
+      apply.classList.add('hidden');
+      $('rosterPreview').replaceChildren();
+    };
+    bind('previewRoster',async ({classId,file})=>{
+      const version=viewVersion;
+      const selection=++selectionVersion;
+      pending=null;
+      apply.classList.add('hidden');
+      $('rosterPreview').replaceChildren();
+      const {parseRosterFile}=await import('./assets/roster-import.js');
+      const parsed=await parseRosterFile(file);
+      if(version!==viewVersion||selection!==selectionVersion)return;
+      const selected=classes.find(c=>c.id===classId);
+      const section=selected?.name.match(/[0-9٠-٩۰-۹]+/)?.[0].replace(/[٠-٩۰-۹]/g,c=>String(c.charCodeAt(0)%16));
+      const issues=[...parsed.issues];
+      if(parsed.classHint&&(gradeName(parsed.classHint.gradeLevel)!==selected.grade_level||String(parsed.classHint.section)!==section)){
+        issues.push('بيانات المرحلة أو الفصل في الكشف تختلف عن الفصل المحدد.');
+      }
+      $('rosterPreview').innerHTML=`<p>${safe(parsed.names.length)} اسمًا مقروءًا</p>`+
+        (issues.length?table(['مواضع تحتاج مراجعة'],issues.map(i=>[i])):'');
+      if(issues.length||!parsed.names.length)return 'راجعي معاينة الملف';
+      pending={classId,names:parsed.names};
+      apply.classList.remove('hidden');
+      return 'الكشف جاهز للاستيراد';
+    },false);
+    apply.onclick=async()=>{
+      if(!pending)return;
+      const version=viewVersion;
+      apply.disabled=true;
+      try{
+        const result=await checked(client.rpc('hub_import_roster',{p_class:pending.classId,p_names:pending.names}));
+        if(version!==viewVersion)return;
+        pending=null;
+        await teacherLoad();
+        if(version===viewVersion)info('teacherMsg',`أُضيف ${result.added}، والموجود مسبقًا ${result.existing}، والمكرر في الملف ${result.duplicates}.`);
+      }catch(error){if(version===viewVersion)info('teacherMsg',error.message,true)}
+      finally{apply.disabled=false}
+    };
+  }
+  bind('exportRoster',({id,format})=>{
+    const data=[['الاسم','الفصل','الحالة'],...students.filter(s=>s.class_id===id).map(s=>[s.full_name,className(id),s.active?'نشطة':'موقوفة'])];
+    const title='كشف '+className(id);
+    if(format==='print')printPrivateTable(title,data);
+    else downloadWorkbook('roster.xlsx',title,data);
+  },false);
   bind('addStudent',async data=>{
     const {id}=await checked(client.from('students').insert({...data,full_name:data.full_name.trim().replace(/\s+/g,' ')}).select('id').single());
     try {
@@ -279,7 +352,20 @@ async function teacherLoad(){
     const version=viewVersion;
     const codes=await checked(client.rpc('hub_issue_class_codes',{p_class:id}));
     if(version!==viewVersion||!$('studentInvite'))return;
-    $('studentInvite').innerHTML=table(['الطالبة','رمز الدخول'],codes.map(c=>[c.name,c.pin]));
+    const data=[['الطالبة','رمز الدخول'],...codes.map(c=>[c.name,c.pin])];
+    const zone=$('studentInvite');
+    zone.innerHTML=table(data[0],data.slice(1));
+    if(codes.length){
+      const title='رموز '+className(id);
+      for(const [label,action] of [
+        ['تنزيل Excel',()=>downloadWorkbook('student-codes.xlsx',title,data)],
+        ['طباعة الرموز',()=>printPrivateTable(title,data)]
+      ]){
+        const control=document.createElement('button');
+        control.type='button';control.className='action secondary';control.textContent=label;
+        control.onclick=action;zone.append(control);
+      }
+    }
     return codes.length?'صدرت '+codes.length+' رموز':'كل طالبات الفصل النشطات لديهن رموز سارية.';
   },false);
   bind('revokeStudentCode',({id})=>checked(client.rpc('hub_revoke_student_code',{p_student:id})).then(()=> 'أُلغي رمز الطالبة'));
