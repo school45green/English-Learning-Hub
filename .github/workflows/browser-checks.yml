@@ -27,6 +27,7 @@ jobs:
           export function createClient() {
             return {
               auth: {
+                signOut: async () => ({error:null}),
                 getSession: async () => ({data:{session:null}}),
                 getUser: async () => ({data:{user:new URLSearchParams(location.search).has('teacher')?{id:'teacher'}:null}})
               },
@@ -66,6 +67,18 @@ jobs:
                 route.fulfill({contentType:'application/javascript',headers:{'access-control-allow-origin':'*'},body:mock}));
               await page.goto('http://127.0.0.1:8765/', {waitUntil:'load'});
               assert.equal(await page.title(), 'English Learning Hub');
+              const home=async()=>{
+                await page.locator('header').waitFor();
+                for(const id of ['secureToggle','studentToggle','familyToggle'])assert.ok(await page.locator('#'+id).isVisible());
+                assert.equal(await page.locator('#sectionBoard').isVisible(),false);
+                assert.equal(await page.getByRole('button',{name:'العودة إلى لوحة الأقسام'}).count(),0);
+                assert.equal(await page.evaluate(()=>scrollY),0);
+              };
+              await home();
+              await page.locator('#familyToggle').click();
+              await page.locator('#familyHome').click();
+              await home();
+              await page.locator('#homeWelcome button').click();
               assert.equal(await page.locator('#nav button').count(), 15);
               for (let i=0;i<15;i++) {
                 await page.locator('#nav button').nth(i).click();
@@ -76,6 +89,7 @@ jobs:
                 assert.equal(await page.locator('#sectionBoard').isVisible(),true);
                 assert.equal(await page.locator('#detail').isVisible(),false);
               }
+              await page.locator('#sectionBoard > button').click();
               await page.locator('#studentToggle').click();
               const form = page.locator('#studentCodeForm');
               await form.locator('[name=grade]').selectOption({label:'أول ثانوي'});
@@ -95,6 +109,8 @@ jobs:
               await student.getByRole('button',{name:/درجاتي/}).click();
               await page.locator('#myResults').getByText('Practice quiz', {exact:false}).waitFor();
               assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), true);
+              await page.locator('#secureLogout').click();
+              await home();
               await page.goto('http://127.0.0.1:8765/?teacher=1');
               await page.locator('#secureToggle').click();
               const teacherNav = page.locator('#teacherNav');
@@ -109,6 +125,8 @@ jobs:
                 await page.locator('#teacherBack').click();
                 await teacherNav.waitFor();
               }
+              await page.locator('#secureLogout').click();
+              await home();
               await page.goto('http://127.0.0.1:8765/#family='+'a'.repeat(48));
               await page.locator('#familyLogin input').fill('1234');
               await page.locator('#familyLogin button').click();
@@ -120,8 +138,8 @@ jobs:
                 assert.equal(await page.evaluate(() => scrollY),0);
                 await family.locator('[data-section-back]').click();
               }
-              await page.locator('#publicBack').click();
-              assert.equal(await page.locator('#sectionBoard').isVisible(),true);
+              await page.locator('#exitFamily').click();
+              await home();
               assert.deepEqual(errors, []);
               console.log(name + ' browser checks passed');
               await context.close();
