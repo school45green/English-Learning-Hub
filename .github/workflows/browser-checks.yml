@@ -7,7 +7,7 @@ permissions:
   contents: read
 jobs:
   chromium:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
@@ -56,7 +56,7 @@ jobs:
                 route.fulfill({contentType:'application/javascript',headers:{'access-control-allow-origin':'*'},body:mock}));
               await page.goto('http://127.0.0.1:8765/', {waitUntil:'load'});
               assert.equal(await page.title(), 'English Learning Hub');
-              assert.equal(await page.locator('nav button').count(), 15);
+              assert.equal(await page.locator('#nav button').count(), 15);
               await page.locator('#studentToggle').click();
               const form = page.locator('#studentCodeForm');
               await form.locator('[name=grade]').selectOption({label:'أول ثانوي'});
