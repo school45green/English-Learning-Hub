@@ -38,11 +38,12 @@ jobs:
                   order: () => ({range: async () => ({data:({
                     school_classes:[{id:'c1',name:'Class A',course:'Mega Goal 1'},{id:'c2',name:'Class B',course:'Mega Goal 3'}],
                     students:[{id:'s1',class_id:'c1',full_name:'ريم'},{id:'s2',class_id:'c1',full_name:'أمل'},{id:'s3',class_id:'c2',full_name:'هند'}],
-                    activities:[{id:'act',title:'Reading practice',course:'Mega Goal 1',unit_no:2,skill:'Reading',activity_targets:[],activity_student_targets:[]}]
+                    activities:[{id:'act',title:'Reading practice',course:'Mega Goal 1',unit_no:2,kind:'worksheet',max_attempts:1,quiz_revision:0,skill:'Reading',activity_targets:[{class_id:'c1'}],activity_student_targets:[]}]
                   })[table]||[]})})
                 })
               }),
               rpc: async (name, args) => {
+                if(name==='hub_manage_quiz')return {data:args.p_action==='read'?[{id:'q1',prompt:'Read this question',choices:['A','B'],correct:'A',points:2}]:{versioned:false}};
                 if(name==='hub_open_standing_link')return {data:'test-session'};
                 if(name==='hub_standing_link')return {data:args.p_action==='status'?{principal:'pending',vice_principal:'pending'}:{link:'a'.repeat(64)}};
                 if(name==='hub_redeem_leadership'){
@@ -178,6 +179,26 @@ jobs:
                   assert.deepEqual(await rows.allTextContents(),['ريم']);
                   await page.locator('#exportRoster [name=id]').selectOption('c2');
                   assert.deepEqual(await rows.allTextContents(),['هند']);
+                }
+                if(i===2){
+                  const actions=page.locator('#quizList');
+                  await page.locator('#qState').selectOption('منشور');
+                  assert.equal(await actions.locator('article').count(),0);
+                  await page.locator('#qState').selectOption('مسودة');
+                  await actions.locator('[data-action=preview]').click();
+                  await page.locator('#quizDetail').getByRole('radio',{name:'B'}).check();
+                  await actions.locator('[data-action=results]').click();
+                  await page.locator('#quizDetail').getByText(/نسبة الإنجاز/).waitFor();
+                  await actions.locator('[data-action=copy]').click();
+                  await page.getByText('حفظ نسخة كمسودة',{exact:true}).waitFor();
+                  assert.equal(await page.locator('#newActivity [name=classId]:checked').count(),0);
+                  await actions.locator('[data-action=edit]').click();
+                  await page.locator('#newActivity [name=points]').fill('4');
+                  await page.getByRole('button',{name:'حفظ تعديل الأسئلة'}).click();
+                  await page.locator('#teacherMsg').getByText('حُفظت تعديلات الاختبار').waitFor();
+                  page.once('dialog',d=>d.dismiss());
+                  await actions.locator('[data-action=delete]').click();
+                  assert.equal(await actions.locator('article').count(),1);
                 }
                 if(i===3){
                   for(const name of ['Mega Goal 1','Unit 2','Reading','Reading practice'])

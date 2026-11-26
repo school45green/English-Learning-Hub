@@ -384,7 +384,7 @@ function showTeacherSection(body){
 function fetchTeacherSnapshot(){
   const pending=Promise.all([
     rows('school_classes','id,name,course,grade_level,archived_at'),rows('students','id,full_name,class_id,active'),
-    rows('activities','id,title,kind,course,unit_no,skill,max_score,max_attempts,published,activity_targets(class_id),activity_student_targets(student_id)'),
+    rows('activities','id,title,kind,course,unit_no,skill,max_score,max_attempts,published,quiz_closed,quiz_removed,quiz_revision,activity_targets(class_id),activity_student_targets(student_id)'),
     rows('submissions','id,student_id,activity_id,score,submitted_at,status,attempt'),
     rows('hub_plans','id,student_id,kind,title,instructions,due_on,completed,unit_no,skill'),
     rows('honors','id,student_id,category,title,description,week_start,archived_at'),
@@ -431,7 +431,8 @@ async function teacherLoad(refresh=false){
   const activityRows=items=>table(['النشاط','المقرر','الوحدة','الفصل','منشور'],items.map(x=>[x.title,x.course,x.unit_no,[...x.activity_targets.map(t=>className(t.class_id)),...x.activity_student_targets.map(t=>studentName(t.student_id))].join('، '),x.published?'نعم':'مسودة']));
   const activityForm=card('إنشاء اختبار',form('newActivity',fields('title','العنوان','maxlength="160"')+'<fieldset><legend>الفصول المستهدفة</legend>'+classes.filter(c=>!c.archived_at).map(c=>`<label><input type="checkbox" name="classId" value="${safe(c.id)}"> ${safe(c.name)} — ${safe(c.course)}</label>`).join('')+'</fieldset><label>طالبات محددات <select multiple size="5" name="studentId">'+activeOptions+'</select></label>'+select('kind','النوع',options(kinds,x=>x.name))+fields('unit','الوحدة','type="number" min="1" max="20"')+fields('attempts','المحاولات','type="number" min="1" max="20" value="1"')+
     '<label>المهارة <input name="skill" maxlength="80"></label><label>استيراد ورقة أسئلة PDF نصي أو TXT <input id="worksheetFile" type="file" accept=".pdf,.txt"></label><p>رقّمي الأسئلة، واكتبي الخيارات A. إلى D. ومفتاح Answer: A إن وجد. راجعي كل سؤال قبل حفظه.</p><button id="importWorksheet" type="button" class="action secondary">استخراج الأسئلة</button><p id="worksheetStatus" aria-live="polite"></p><div id="questions"></div><button type="button" class="action secondary" id="addQuestion">إضافة سؤال</button> ','حفظ مسودة'));
-  const publishing=card('إعادة فتح محاولة',form('reopenActivity',select('student','الطالبة',activeOptions)+select('activity','النشاط',options(activities,x=>x.title)),'فتح محاولة إضافية'))+card('النشر',form('publishActivity',select('id','النشاط',options(activities,x=>x.title))+select('published','الحالة','<option value="true">نشر</option><option value="false">إيقاف النشر</option>')));
+  const saved=activities.filter(a=>!a.quiz_removed);
+  const publishing=card('إعادة فتح محاولة',form('reopenActivity',select('student','الطالبة',activeOptions)+select('activity','النشاط',options(saved,x=>x.title)),'فتح محاولة إضافية'))+card('النشر',form('publishActivity',select('id','النشاط',options(saved,x=>x.title))+select('published','الحالة','<option value="true">نشر</option><option value="false">إيقاف النشر</option>')));
   const filter = (id,label,values,name) => `<label>${label} <select id="${id}"><option value="">الكل</option>${options(values,name)}</select></label>`;
   const reportCard=card('تقارير الدرجات والإنجاز',
     '<div class="secure-grid" id="reportFilters">'+
@@ -502,11 +503,12 @@ async function teacherLoad(refresh=false){
       card('تعديل بيانات طالبة',form('editStudent',select('id','الطالبة',studentOptions)+fields('full_name','الاسم','maxlength="160"')+select('class_id','الفصل',classOptions)+select('active','الحالة','<option value="true">نشطة</option><option value="false">إيقاف (حذف من قائمة النشطات)</option>')));
       break;
     }
-    case 2: body=activityForm+publishing+activityRows(activities);break;
+    case 2: body=card('الاختبارات المحفوظة',
+      '<div class="flex" id="quizFilters">'+filter('qGrade','المرحلة',[...new Set(classes.map(c=>c.grade_level).filter(Boolean))].map(id=>({id})),x=>x.id)+filter('qClass','الفصل',classes,x=>x.name)+filter('qUnit','الوحدة',[...new Set(saved.map(a=>a.unit_no).filter(x=>x!=null))].sort((a,b)=>a-b).map(id=>({id})),x=>x.id)+filter('qState','الحالة',['منشور','مسودة','مغلق'].map(id=>({id})),x=>x.id)+'</div><div id="quizList"></div><div id="quizDetail" tabindex="-1"></div>')+activityForm+publishing;break;
     case 3: {
       const courses=new Set(['Mega Goal 1','Mega Goal 3',...activities.map(a=>a.course)]);
       body=Array.from(courses,course=>{
-        const list=activities.filter(a=>a.course===course);
+        const list=saved.filter(a=>a.course===course);
         const units=[...new Set(list.map(a=>a.unit_no))].sort((a,b)=>(a??Infinity)-(b??Infinity));
         const content=units.map(unit=>{
           const items=list.filter(a=>a.unit_no===unit);
@@ -517,7 +519,7 @@ async function teacherLoad(refresh=false){
                 `<details class="secure-card" data-resource="${safe(a.id)}"><summary>${safe(a.title)}</summary><p>${a.published?'منشور':'مسودة'}</p><div aria-live="polite"></div></details>`).join('')+'</details>').join('')+'</details>';
         }).join('');
         return `<details class="secure-card"><summary>${safe(course)}</summary>${content||'<p>لا توجد أنشطة مضافة لهذا المقرر.</p>'}</details>`;
-      }).join('')+attachment('units',options(activities,x=>x.title));
+      }).join('')+attachment('units',options(saved,x=>x.title));
       break;
     }
     case 4: case 5:
@@ -686,6 +688,7 @@ async function teacherLoad(refresh=false){
     $('editStudent').elements.class_id.value=student.class_id;
     $('editStudent').elements.active.value=String(student.active);
   };
+  let editQuiz=null;
   if($('addQuestion')){
     const addQuestion=(item={})=>{
       const box=document.createElement('fieldset');
@@ -695,16 +698,18 @@ async function teacherLoad(refresh=false){
         '<div data-choices></div><button type="button" class="action secondary">إزالة السؤال</button>';
       const type=box.querySelector('[name="type"]');
       const choiceFields=box.querySelector('[data-choices]');
+      const positions=Array.from({length:Math.max(4,item.choices?.length||0)},(_,i)=>i+1);
       const renderChoices=()=>{
         const boolean=type.value==='boolean';
-        choiceFields.innerHTML=(boolean?'':[1,2,3,4].map(n=>n<3?fields('choice'+n,'الخيار '+n,'maxlength="300"'):`<label>الخيار ${n} <input name="choice${n}" maxlength="300"></label>`).join(''))+
-          select('correct','الإجابة الصحيحة',(boolean?['True','False']:['1','2','3','4'])
+        choiceFields.innerHTML=(boolean?'':positions.map(n=>n<3?fields('choice'+n,'الخيار '+n,'maxlength="300"'):`<label>الخيار ${n} <input name="choice${n}" maxlength="300"></label>`).join(''))+
+          select('correct','الإجابة الصحيحة',(boolean?['True','False']:positions)
             .map((label,i)=>'<option value="'+i+'">'+label+'</option>').join(''));
       };
       type.onchange=renderChoices;
       if(item.boolean)type.value='boolean';
       renderChoices();
       box.querySelector('[name="prompt"]').value=item.prompt??'';
+      box.querySelector('[name=points]').value=item.points??1;
       (item.choices||[]).forEach((choice,i)=>{
         const field=box.querySelector('[name="choice'+(i+1)+'"]');
         if(field)field.value=choice;
@@ -712,6 +717,73 @@ async function teacherLoad(refresh=false){
       if(item.correct!=null)box.querySelector('[name="correct"]').value=String(item.correct);
       box.querySelector('button').onclick=()=>{if($('questions').children.length>1)box.remove()};
       $('questions').append(box);
+    };
+    const state=a=>a.published?'منشور':a.quiz_closed?'مغلق':'مسودة';
+    const assigned=(a,s)=>a.activity_targets.some(t=>t.class_id===s.class_id)||a.activity_student_targets.some(t=>t.student_id===s.id);
+    const list=$('quizList'),detail=$('quizDetail');
+    function draw(){
+      detail.replaceChildren();
+      const visible=saved.filter(a=>{
+        const targetClasses=classes.filter(c=>a.activity_targets.some(t=>t.class_id===c.id)||students.some(s=>s.class_id===c.id&&a.activity_student_targets.some(t=>t.student_id===s.id)));
+        const grade=$('qGrade').value,group=$('qClass').value;
+        return ((!grade&&!group)||targetClasses.some(c=>(!grade||c.grade_level===grade)&&(!group||c.id===group)))&&
+          (!$('qUnit').value||String(a.unit_no)===$('qUnit').value)&&(!$('qState').value||state(a)===$('qState').value);
+      });
+      list.innerHTML=visible.map(a=>`<article class="secure-card" data-quiz="${safe(a.id)}"><h3>${safe(a.title)}</h3><p>${a.published?'🟢':a.quiz_closed?'🔒':'📝'} ${state(a)} · ${safe(a.course)} · ${safe(a.unit_no??'—')}</p><div class="flex">${[['preview','👁️ معاينة'],['edit','✏️ تعديل'],['results','📊 النتائج'],['copy','📋 نسخ'],['delete','🗑️ حذف']].map(([id,label])=>`<button type="button" class="action secondary" data-action="${id}">${label}</button>`).join('')}</div></article>`).join('')||'<p>لا توجد اختبارات مطابقة.</p>';
+    }
+    $('quizFilters').onchange=draw;
+    draw();
+    list.onclick=async e=>{
+      const control=e.target.closest('[data-action]');
+      if(!control)return;
+      const a=saved.find(x=>x.id===control.closest('[data-quiz]').dataset.quiz);
+      const action=control.dataset.action;
+      const request=(op)=>checked(client.rpc('hub_manage_quiz',{p_id:a.id,p_action:op,p_revision:a.quiz_revision}));
+      try{
+        if(action==='delete'){
+          if(!confirm('حذف «'+a.title+'» من التدريبات؟ تبقى النتائج السابقة في التقارير.'))return;
+          await request('delete');
+          if(list.isConnected)await teacherLoad(true);
+          return;
+        }
+        if(action==='results'){
+          const attempts=submissions.filter(r=>r.activity_id===a.id);
+          const roster=students.filter(s=>s.active&&assigned(a,s));
+          const submitted=roster.filter(s=>attempts.some(r=>r.student_id===s.id)).length;
+          detail.innerHTML=card('نتائج '+safe(a.title),`<p>سلّمت ${submitted} من ${roster.length} · نسبة الإنجاز ${roster.length?Math.round(100*submitted/roster.length):0}٪ · المحاولات ${attempts.length}</p>`+
+            table(['الطالبة','المحاولة','الدرجة','من'],attempts.map(r=>[studentName(r.student_id),r.attempt,r.score??'قيد المراجعة',a.max_score])));
+        }else{
+          control.disabled=true;
+          const questions=await request('read');
+          if(!control.isConnected)return;
+          if(action==='preview'){
+            detail.innerHTML=card(safe(a.title),'<p>معاينة الطالبة</p>'+questions.map((q,i)=>`<fieldset><legend>${safe(q.prompt)}</legend>${q.choices.map(c=>`<label class="quiz-option"><input type="radio" name="preview${i}"> ${safe(c)}</label>`).join('')}</fieldset>`).join(''));
+          }else{
+            const f=$('newActivity');
+            f.reset();editQuiz=action==='edit'?a:null;
+            f.elements.title.value=editQuiz?a.title:a.title+' — نسخة';
+            f.elements.unit.value=a.unit_no??'';f.elements.skill.value=a.skill||'';
+            f.elements.kind.value=a.kind;f.elements.attempts.value=a.max_attempts;
+            for(const field of f.querySelectorAll('[name=classId]'))field.checked=!!editQuiz&&a.activity_targets.some(t=>t.class_id===field.value);
+            for(const opt of f.elements.studentId.options)opt.selected=!!editQuiz&&a.activity_student_targets.some(t=>t.student_id===opt.value);
+            for(const field of f.querySelectorAll('[name=title],[name=classId],[name=studentId],[name=unit],[name=kind],[name=skill],[name=attempts]'))field.disabled=!!editQuiz;
+            $('questions').replaceChildren();
+            questions.forEach(q=>addQuestion({...q,boolean:JSON.stringify(q.choices)==='["True","False"]',correct:q.choices.indexOf(q.correct)}));
+            if(!questions.length)addQuestion();
+            f.querySelector(':scope > button:last-child').textContent=editQuiz?'حفظ تعديل الأسئلة':'حفظ نسخة كمسودة';
+            f.closest('.secure-card').querySelector('h3').textContent=editQuiz?'تعديل الاختبار':'نسخ الاختبار — اختاري الفصل المستهدف';
+            if(!f.parentElement.querySelector('[data-cancel]')){
+              const cancel=document.createElement('button');
+              cancel.type='button';cancel.dataset.cancel='';cancel.className='action secondary';
+              cancel.textContent='إلغاء والعودة للقائمة';cancel.onclick=()=>teacherLoad();
+              f.after(cancel);
+            }
+            f.scrollIntoView();return;
+          }
+        }
+        detail.focus();
+      }catch(err){if(list.isConnected)info('teacherMsg',err.message,true)}
+      finally{control.disabled=false}
     };
     $('addQuestion').onclick=()=>{if($('questions').children.length<100)addQuestion()};
     addQuestion();
@@ -730,15 +802,19 @@ async function teacherLoad(refresh=false){
       }finally{control.disabled=false}
     };
   }
-  bind('newActivity',data=>{
+  bind('newActivity',async data=>{
     const questions=Array.from($('questions').children,(box,i)=>{
       const value=name=>box.querySelector('[name="'+name+'"]').value.trim();
-      const choices=value('type')==='boolean'?['True','False']:[1,2,3,4].map(n=>value('choice'+n));
+      const choices=value('type')==='boolean'?['True','False']:Array.from(box.querySelectorAll('[name^=choice]'),field=>field.value.trim());
       const correct=choices[Number(value('correct'))];
       const available=choices.filter(Boolean);
       if(!correct||available.length<2||new Set(available).size!==available.length)throw new Error('أدخلي خيارين مختلفين على الأقل واختاري إجابة موجودة.');
       return {id:'q'+(i+1),prompt:value('prompt'),choices:available,correct,points:Number(value('points'))};
     });
+    if(editQuiz){
+      const result=await checked(client.rpc('hub_manage_quiz',{p_id:editQuiz.id,p_revision:editQuiz.quiz_revision,p_action:'edit',p_questions:questions}));
+      return result.versioned?'حُفظت النسخة المعدلة كمسودة وأُغلق الإصدار السابق مع حفظ نتائجه.':'حُفظت تعديلات الاختبار';
+    }
     const targets=new FormData($('newActivity'));
     return checked(client.rpc('hub_create_scoped_activity',{p_title:data.title,p_classes:targets.getAll('classId'),p_students:targets.getAll('studentId'),p_kind:data.kind,p_unit:Number(data.unit),p_skill:data.skill,p_attempts:Number(data.attempts),p_questions:questions})).then(()=> 'حُفظ الاختبار كمسودة');
   });
