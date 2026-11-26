@@ -43,6 +43,7 @@ jobs:
                 })
               }),
               rpc: async (name, args) => {
+                if(name==='hub_fluency')return {data:[]};
                 if(name==='hub_manage_quiz')return {data:args.p_action==='read'?[{id:'q1',prompt:'Read this question',choices:['A','B'],correct:'A',points:2}]:{versioned:false}};
                 if(name==='hub_open_standing_link')return {data:'test-session'};
                 if(name==='hub_standing_link')return {data:args.p_action==='status'?{principal:'pending',vice_principal:'pending'}:{link:'a'.repeat(64)}};
@@ -120,8 +121,8 @@ jobs:
               await page.locator('#familyHome').click();
               await home();
               await page.locator('#homeWelcome button').click();
-              assert.equal(await page.locator('#nav button').count(), 15);
-              for (let i=0;i<15;i++) {
+              assert.equal(await page.locator('#nav button').count(), 16);
+              for (let i=0;i<16;i++) {
                 await page.locator('#nav button').nth(i).click();
                 assert.equal(await page.locator('#sectionBoard').isVisible(),false);
                 assert.equal(await page.locator('#detail').isVisible(),true);
@@ -158,13 +159,24 @@ jobs:
               await page.locator('#secureToggle').click();
               const teacherNav = page.locator('#teacherNav');
               await teacherNav.waitFor();
-              assert.equal(await teacherNav.locator('button').count(),15);
-              for (let i=0;i<15;i++) {
+              assert.equal(await teacherNav.locator('button').count(),16);
+              for (let i=0;i<16;i++) {
                 await teacherNav.locator('button').nth(i).click();
                 await page.locator('#teacherSectionTitle').waitFor();
                 await page.getByText('جارٍ تحميل القسم…').waitFor({state:'hidden'});
                 assert.equal(await teacherNav.isVisible(),false);
                 assert.equal(await page.evaluate(() => scrollY),0);
+                if(i===15){
+                  const section=page.locator('#teacherFluency');
+                  for(const skill of ['listening','speaking','reading','writing']){
+                    await section.locator('[data-skill='+skill+']').click();
+                    await section.locator('[data-act=new]').click();
+                    await section.locator('form input[name=title]').waitFor();
+                    await section.locator('[data-act=back]').click();
+                  }
+                  await section.locator('[data-act=progress]').click();
+                  await section.locator('[data-act=export]').waitFor();
+                }
                 if(i===14){
                   await page.locator('#manageLeadership [name=role]').selectOption('principal');
                   await page.locator('#manageLeadership [name=action]').selectOption('issue');
@@ -214,7 +226,7 @@ jobs:
               await page.locator('#familyLogin input').fill('1234');
               await page.locator('#familyLogin button').click();
               const family=page.locator('#familyData');
-              for (let i=0;i<5;i++) {
+              for (let i=0;i<6;i++) {
                 await family.locator('[data-section-board] button').nth(i).click();
                 assert.equal(await family.locator('[data-section-board]').isVisible(),false);
                 assert.equal(await family.locator('[data-section-panel]:visible').count(),1);
