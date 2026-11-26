@@ -13,6 +13,21 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
+      - name: Verify official Pages URL serves the tested release
+        run: |
+          set -eu
+          for attempt in $(seq 1 20); do
+            if curl -fsS --max-time 10 "https://school45green.github.io/English-Learning-Hub/?verify=fluency-${GITHUB_RUN_ID}-${attempt}" -o "$RUNNER_TEMP/live.html" &&
+              curl -fsS --max-time 10 "https://school45green.github.io/English-Learning-Hub/assets/fluency.js?verify=${GITHUB_RUN_ID}-${attempt}" -o "$RUNNER_TEMP/live-fluency.js" &&
+              cmp index.html "$RUNNER_TEMP/live.html" &&
+              cmp assets/fluency.js "$RUNNER_TEMP/live-fluency.js"; then
+              echo "Official homepage and Fluency Horizons module match the tested release"
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
+      - uses: actions/checkout@v4
       - name: Install testing browser
         run: |
           npm install --prefix "$RUNNER_TEMP/hub-browser" playwright@1.58.2
