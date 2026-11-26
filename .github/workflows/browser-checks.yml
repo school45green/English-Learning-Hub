@@ -1,5 +1,7 @@
 name: Browser checks
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [codex/navigation-pages]
   workflow_dispatch:
@@ -43,7 +45,12 @@ jobs:
                 })
               }),
               rpc: async (name, args) => {
-                if(name==='hub_fluency')return {data:[]};
+                if(name==='hub_fluency'){
+                  const op=args.p_op,skill=args.p_data.skill||'reading';
+                  if(op==='list')return {data:[{id:'task',skill,title:'Weekly practice',level:'beginner',attempts:2,published:true,questions:[{prompt:'Select A',choices:['A','B']}],work:[]}]};
+                  if(op==='submit')return {data:{score:args.p_data.answers?.[0]==='A'?100:null}};
+                  return {data:[]};
+                }
                 if(name==='hub_manage_quiz')return {data:args.p_action==='read'?[{id:'q1',prompt:'Read this question',choices:['A','B'],correct:'A',points:2}]:{versioned:false}};
                 if(name==='hub_open_standing_link')return {data:'test-session'};
                 if(name==='hub_standing_link')return {data:args.p_action==='status'?{principal:'pending',vice_principal:'pending'}:{link:'a'.repeat(64)}};
@@ -69,7 +76,7 @@ jobs:
             };
           }`;
 
-          const browser = await chromium.launch();
+          const browser = await chromium.launch({args:['--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream']});
           try {
             for (const [name, config] of [
               ['desktop', {viewport:{width:1440,height:900}}],
@@ -142,6 +149,21 @@ jobs:
               await form.locator('[name=pin]').fill('0042');
               await form.locator('button').click();
               const student = page.locator('#secureBody');
+              await student.getByRole('button',{name:/Fluency Horizons/}).click();
+              const horizon=page.locator('#studentFluency');
+              for(const skill of ['listening','speaking','reading','writing']){
+                await horizon.locator('[data-skill='+skill+']').click();
+                await horizon.locator('[data-act=open]').click();
+                if(skill==='speaking'){
+                  await horizon.locator('[data-act=record]').click();
+                  await horizon.getByRole('button',{name:'إيقاف التسجيل'}).click();
+                  await horizon.locator('audio').waitFor();
+                }else if(skill==='writing')await horizon.locator('textarea').fill('A new paragraph.');
+                else await horizon.getByRole('radio',{name:'A',exact:true}).check();
+                await horizon.getByRole('button',{name:'تسليم المحاولة'}).click();
+                await horizon.locator('[data-act=open]').waitFor();
+              }
+              await student.locator('[data-section-back]').click();
               await student.getByRole('button',{name:/أنشطتي/}).click();
               assert.equal(await student.locator('[data-section-board]').isVisible(),false);
               await page.getByText('Choose an answer').waitFor();
