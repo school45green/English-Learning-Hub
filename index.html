@@ -5,8 +5,8 @@
 .report-bar meter{width:100%;accent-color:var(--green,#346752)}
 .report-chart:empty{display:none}
 header.hidden+main.wrap{margin-top:16px}.section-back{margin-block-end:12px}.section-back[hidden], [data-section-panel][hidden]{display:none}
-</style></head><body><header><div style="font-size:34px">📖 ✨ 👑</div><h1>English Learning Hub</h1><p>الثانوية الخامسة والأربعون<br><span id="subtitle">المعلمة حكيمة المطيري</span></p><div style="margin-top:16px"><button class="action" id="secureToggle" type="button">🔐 دخول المعلمة</button> <button class="action" id="studentToggle" type="button">دخول الطالبة</button> <button class="action" id="adminToggle">🏫 دخول الإدارة</button> <button class="action" id="familyToggle">دخول الأسرة</button></div></header><main class="wrap"><section class="panel" id="homeWelcome"><h2>مرحبًا بكِ في المنصة 🌷</h2><button class="action secondary" onclick="showPublicBoard()">جولة تعريفية للزائرات</button></section><section class="panel hidden" id="sectionBoard"><button class="action secondary" onclick="showHome()">الواجهة الرئيسية</button><div class="flex" style="justify-content:space-between"><h2>جولة في أقسام المنصة</h2><span class="muted">16 قسمًا</span></div><div class="nav" id="nav"></div></section><section class="panel hidden" id="detail"></section><section class="panel hidden" id="secureArea"><div class="flex" style="justify-content:space-between"><button class="action secondary section-back" id="closeSecure" type="button">العودة إلى لوحة الأقسام</button><h2>🔐 البوابة المحمية</h2></div><div id="authBox"><form id="secureLogin"><label>البريد الإلكتروني <input type="email" id="secureEmail" required autocomplete="username"></label><label>كلمة المرور <input type="password" id="securePassword" required autocomplete="current-password"></label><button class="action" type="submit" id="secureSubmit">دخول المنصة</button></form><p id="secureError" role="alert"></p></div><div id="secureDashboard" class="hidden"><div class="flex" style="justify-content:space-between"><h3 id="secureTitle">لوحتي</h3><button class="action secondary" id="secureLogout">تسجيل الخروج</button></div><div id="secureBody"></div></div></section></main><footer>English Learning Hub • Hakimah Almutairi</footer><script>
-const sections=[['▦','نظرة عامة'],['👩‍🎓','الطالبات والفصول'],['📝','تدريبات تفاعلية'],['📚','مكتبة الوحدات'],['🎯','مسار التمكّن'],['🌟','آفاق الإثراء'],['🏆','رواق التميّز'],['💬','بصمات التفاعل الرقمي'],['🎨','معرض إبداعات الطالبات'],['👑','ملكات الكتابة'],['📓','رائدات كتاب النشاط'],['🎓','متفوقات الاختبارات'],['👨‍👩‍👧','بوابة الأسرة'],['🗄️','سجل الفصل الدراسي'],['🛡️','صلاحيات الدخول'],['🌟','آفاق الطلاقة | Fluency Horizons']];const el=document.getElementById('detail');document.getElementById('nav').innerHTML=sections.map((s,i)=>`<button class="tile" onclick="show(${i})"><span class="emoji">${s[0]}</span><b>${s[1]}</b></button>`).join('');function moveToPage(focus){
+</style></head><body><header><div style="font-size:34px">📖 ✨ 👑</div><h1>English Learning Hub</h1><p>الثانوية الخامسة والأربعون<br><span id="subtitle">المعلمة حكيمة المطيري</span></p><div style="margin-top:16px"><button class="action" id="secureToggle" type="button">🔐 دخول المعلمة</button> <button class="action" id="studentToggle" type="button">دخول الطالبة</button> <button class="action" id="adminToggle">🏫 دخول الإدارة</button> <button class="action" id="familyToggle">دخول الأسرة</button></div></header><main class="wrap"><section class="panel" id="homeWelcome"><h2>مرحبًا بكِ في المنصة 🌷</h2><button class="action secondary" onclick="showPublicBoard()">جولة تعريفية للزائرات</button></section><section class="panel hidden" id="sectionBoard"><button class="action secondary" onclick="showHome()">الواجهة الرئيسية</button><div class="flex" style="justify-content:space-between"><h2>جولة في أقسام المنصة</h2><span class="muted">17 قسمًا</span></div><div class="nav" id="nav"></div></section><section class="panel hidden" id="detail"></section><section class="panel hidden" id="secureArea"><div class="flex" style="justify-content:space-between"><button class="action secondary section-back" id="closeSecure" type="button">العودة إلى لوحة الأقسام</button><h2>🔐 البوابة المحمية</h2></div><div id="authBox"><form id="secureLogin"><label>البريد الإلكتروني <input type="email" id="secureEmail" required autocomplete="username"></label><label>كلمة المرور <input type="password" id="securePassword" required autocomplete="current-password"></label><button class="action" type="submit" id="secureSubmit">دخول المنصة</button></form><p id="secureError" role="alert"></p></div><div id="secureDashboard" class="hidden"><div class="flex" style="justify-content:space-between"><h3 id="secureTitle">لوحتي</h3><button class="action secondary" id="secureLogout">تسجيل الخروج</button></div><div id="secureBody"></div></div></section></main><footer>English Learning Hub • Hakimah Almutairi</footer><script>
+const sections=[['▦','نظرة عامة'],['👩‍🎓','الطالبات والفصول'],['📝','تدريبات تفاعلية'],['📚','مكتبة الوحدات'],['🎯','مسار التمكّن'],['🌟','آفاق الإثراء'],['🏆','رواق التميّز'],['💬','بصمات التفاعل الرقمي'],['🎨','معرض إبداعات الطالبات'],['👑','ملكات الكتابة'],['📓','رائدات كتاب النشاط'],['🎓','متفوقات الاختبارات'],['👨‍👩‍👧','بوابة الأسرة'],['🗄️','سجل الفصل الدراسي'],['🛡️','صلاحيات الدخول'],['🌟','آفاق الطلاقة | Fluency Horizons'],['🪞','التأمل الذاتي | مرآة التعلم']];const el=document.getElementById('detail');document.getElementById('nav').innerHTML=sections.map((s,i)=>`<button class="tile" onclick="show(${i})"><span class="emoji">${s[0]}</span><b>${s[1]}</b></button>`).join('');function moveToPage(focus){
   if(focus)focus.focus({preventScroll:true});
   window.scrollTo({top:0,behavior:'instant'});
 }
@@ -56,10 +56,12 @@ const tourDescriptions=[
   "تتابع الأسرة نتائج ابنتها المعتمدة وخططها، وتتبادل الرسائل مع المعلمة عبر دعوة خاصة.",
   "يجمع السجل تقارير التسليم والدرجات ويتيح للمعلمة تصفيتها وتصديرها وأرشفتها.",
   "تدير المعلمة رموز الدخول والدعوات، وتصل كل مستخدمة إلى المعلومات المخصصة لدورها.",
-  "Four Skills, One Journey to Excellence — تدريبات متدرجة في الاستماع والتحدث والقراءة والكتابة مع متابعة تقدم كل طالبة."
+  "Four Skills, One Journey to Excellence — تدريبات متدرجة في الاستماع والتحدث والقراءة والكتابة مع متابعة تقدم كل طالبة.",
+  "Self-Reflection – Learning Mirror. تختار الطالبة درسها وتشارك رأيها في لوحة المشاعر."
 ];
 function show(i){shell(i,`<p class="notice">${tourDescriptions[i]}</p>`)}
 </script><script type="module">
+import {mountMirror} from "./assets/learning-mirror.js";
 import {mountFluency,progressView} from "./assets/fluency.js";
 import {downloadWorkbook,printPrivateTable} from "./assets/spreadsheet.js";
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/+esm';
@@ -241,6 +243,9 @@ function learningTasks(data,remedial){
   }
   if(['reading','listening'].includes(data.mode))return learningPairs(data.practice,data.mode,()=>1);
   return [{skill:data.mode,day:1,prompt:data.practice.trim(),expected:null}];
+}
+function mirror(root,code,teacher=false){
+  mountMirror(root,{teacher,rpc:(p_op,p_data)=>checked(client.rpc('hub_learning_mirror',{p_op,p_data,p_token:code?.token??null}))});
 }
 function fluency(root,code,teacher=false,classes=[],students=[]){
   mountFluency(root,{teacher,classes,students,readFile:readLearningFile,
@@ -542,6 +547,7 @@ async function teacherLoad(refresh=false){
           form('replyFamily',select('id','الرسالة',options(inbox,x=>studentName(x.student_id)+' — '+x.message.slice(0,60)))+fields('teacher_reply','الرد','maxlength="1000"'),'إرسال رد'));
       break;
     case 13: body=reportCard+archive;break;
+    case 16: body='<div id="teacherMirror"></div>';break;
     case 15: body='<div id="teacherFluency"></div>';break;
     case 14:
       body=card('بوابة الإدارة', '<p id="leadStatus" role="status"></p>'+form('manageLeadership',select('role','الحساب',leadRoles)+select('action','الإجراء','<option value="issue">عرض الرابط الدائم</option><option value="enable">تفعيل رابط جديد بعد الإلغاء</option><option value="disable">إلغاء الرابط والجلسة</option>'),'تنفيذ')+
@@ -556,6 +562,7 @@ async function teacherLoad(refresh=false){
   }
   const focusTitle=document.activeElement?.id==='teacherSectionTitle';
   showTeacherSection(body);
+  if(current===16)mirror($('teacherMirror'),null,true);
   if(current===15)fluency($('teacherFluency'),null,true,classes.filter(c=>!c.archived_at),students.filter(s=>s.active));
   for(const item of $('secureBody').querySelectorAll('[data-resource]')){
     item.ontoggle=async()=>{
@@ -1053,10 +1060,11 @@ function renderLead(root,role,report,logout){
         ['🎯','الخطط العلاجية والإثرائية',table(['الطالبة','الفصل','الخطة','المسار','الحالة'],report.plans.map(p=>[p.full_name,p.class_name,p.title,labels[p.kind]||p.kind,p.completed?'مكتملة':'قيد التنفيذ']))],
         ['🏆','إنجازات الطالبات',table(['الطالبة','الفصل','التكريم','الأسبوع'],report.honors.map(h=>[h.full_name,h.class_name,h.title,h.week_start]))]
       ];
-      panels.push(['🌟','آفاق الطلاقة','<div id="adminFluency"></div>']);
+      panels.push(['🌟','آفاق الطلاقة','<div id="adminFluency"></div>'],['🪞','التأمل الذاتي | مرآة التعلم','<div id="adminMirror"></div>']);
       root.innerHTML='<h2>لوحة '+leadNames[role]+'</h2><p>للاطلاع فقط</p>'+sectionMenu(panels)+panels.map(([,name,body])=>sectionPanel(name,body)).join('')+'<button class="action secondary" id="leadExit">تسجيل الخروج</button>';
       installSectionBoard(root);
       $('adminFluency').append(progressView(report.fluency));
+      mountMirror($('adminMirror'),{report:report.mirror||[]});
       $('leadExit').onclick=logout;
       moveToPage();
 }
@@ -1143,14 +1151,15 @@ const results=data.results||[];
 const root=$('secureBody');
 const restore=root.dataset.activeSection ? Number(root.dataset.activeSection) : null;
 $('secureTitle').textContent='🌸 بوابة الطالبة';
-const pages=[['📝','أنشطتي'],['📊','درجاتي'],['📚','مكتبة الوحدات'],['🎯','خططي التعليمية'],['🏆','التكريم'],sections[15]];
+const pages=[['📝','أنشطتي'],['📊','درجاتي'],['📚','مكتبة الوحدات'],['🎯','خططي التعليمية'],['🏆','التكريم'],sections[15],sections[16]];
 root.innerHTML=`<div class="secure-card"><h3>مرحبًا ${safe(student.full_name||student.name||'بكِ')}</h3><p>${safe(student.class_name||'')}</p></div>`+
 sectionMenu(pages)+sectionPanel(pages[0][1],'<p id="studentActivityStatus" role="status"></p><div id="myActivities"></div>')+
 sectionPanel(pages[1][1],'<div id="myResults"></div>')+
 sectionPanel(pages[2][1],table(['الوحدة','النشاط','المهارة'],[...activities].sort((a,b)=>(a.unit??0)-(b.unit??0)).map(a=>[a.unit,a.title,a.skill])))+
 sectionPanel(pages[3][1],['remedial','enrichment'].map(kind=>card(kind==='remedial'?'خططي العلاجية':'خططي الإثرائية',
 table(['الخطة','التعليمات','الموعد','الحالة'],(data.plans||[]).filter(x=>x.kind===kind).map(x=>[x.title,x.instructions,x.due_on,x.completed?'مكتملة':'قيد التنفيذ'])))).join('')+'<div id="myLearning"></div>')+
-sectionPanel(pages[4][1],'<div id="myHonorDetails">جارٍ التحميل…</div>')+sectionPanel(pages[5][1],'<div id="studentFluency"></div>');
+sectionPanel(pages[4][1],'<div id="myHonorDetails">جارٍ التحميل…</div>')+sectionPanel(pages[5][1],'<div id="studentFluency"></div>')+sectionPanel(pages[6][1],'<div id="studentMirror"></div>');
+mirror($('studentMirror'),code);
 fluency($('studentFluency'),code);
 installSectionBoard(root,restore,$('closeSecure'));
 for(const a of activities){const box=document.createElement('div');box.className='secure-card';const title=document.createElement('h3');title.textContent=a.title||'نشاط';box.append(title);if(a.resource)box.append(resourceButton('units',a.id,code));const form=document.createElement('form');const questions=Array.isArray(a.questions)?a.questions:(Array.isArray(a.answer_key?.questions)?a.answer_key.questions:[]);if(a.attempts_used>=a.max_attempts){box.append('اكتملت المحاولات المتاحة.');$('myActivities').append(box);continue}if(!questions.length){const p=document.createElement('p');p.textContent='لا توجد أسئلة متاحة لهذا النشاط حاليًا.';box.append(p);$('myActivities').append(box);continue}questions.forEach((q,i)=>{const field=document.createElement('fieldset');const legend=document.createElement('legend');legend.textContent=q.question||q.prompt||'Question '+(i+1);field.append(legend);(q.options||q.choices||[]).forEach((opt,j)=>{const lab=document.createElement('label');lab.className='quiz-option';const input=document.createElement('input');input.type='radio';input.name='q'+i;input.value=String(j);input.required=true;input.checked=a.draft?.[q.id]===opt;lab.append(input,document.createTextNode(' '+(typeof opt==='string'?opt:opt.text||String(opt))));field.append(lab)});form.append(field)});const btn=document.createElement('button');btn.className='action';btn.textContent='تسليم النشاط';form.append(btn);const status=document.createElement('p');

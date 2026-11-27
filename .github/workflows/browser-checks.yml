@@ -26,6 +26,7 @@ jobs:
           import {chromium,devices} from 'playwright';
 
           const mock = `
+          const lesson={id:'mg1-w14-1',title:'Listening',course:'Mega Goal 1',unit:5,unit_title:'Unit 5',week:14,counts:[1,1,0,0],reflection:'مثال تأمل',action:'مثال إجراء'};
           export function createClient() {
             return {
               auth: {
@@ -45,6 +46,10 @@ jobs:
                 })
               }),
               rpc: async (name, args) => {
+                if(name==='hub_learning_mirror'){
+                  if(args.p_op==='vote')sessionStorage.setItem('mirror-vote','1');
+                  return {data:['report','lessons'].includes(args.p_op)?[{...lesson,voted:sessionStorage.getItem('mirror-vote')==='1'}]:{}};
+                }
                 if(name==='hub_fluency'){
                   const op=args.p_op,skill=args.p_data.skill||'reading';
                   if(op==='list')return {data:[{id:'task',skill,title:'Weekly practice',level:'beginner',attempts:2,published:true,questions:[{prompt:'Select A',choices:['A','B']}],work:[]}]};
@@ -59,7 +64,7 @@ jobs:
                   sessionStorage.setItem('mockUsed','1');
                   return {data:'test-session'};
                 }
-                if(name==='hub_leadership_session')return {data:{role:'principal',report:{classes:[],plans:[],results:[],honors:[]}}};
+                if(name==='hub_leadership_session')return {data:{role:'principal',report:{classes:[],plans:[],results:[],honors:[],mirror:[lesson]}}};
                 if(name==='hub_leadership_report')return args.p_key==='test-only'?{data:{classes:[],plans:[],results:[],honors:[]}}:{error:{message:'Forbidden'}};
                 if (name === 'hub_family') return {data:{student:{name:'طالبة تجريبية'},activities:[],plans:[],results:[],honors:[],messages:[]}};
                 if (name === 'hub_login_classes') return {data:[{id:'test-class',name:'فصل وهمي',grade_level:'أول ثانوي'}]};
@@ -128,8 +133,8 @@ jobs:
               await page.locator('#familyHome').click();
               await home();
               await page.locator('#homeWelcome button').click();
-              assert.equal(await page.locator('#nav button').count(), 16);
-              for (let i=0;i<16;i++) {
+              assert.equal(await page.locator('#nav button').count(), 17);
+              for (let i=0;i<17;i++) {
                 await page.locator('#nav button').nth(i).click();
                 assert.equal(await page.locator('#sectionBoard').isVisible(),false);
                 assert.equal(await page.locator('#detail').isVisible(),true);
@@ -149,6 +154,17 @@ jobs:
               await form.locator('[name=pin]').fill('0042');
               await form.locator('button').click();
               const student = page.locator('#secureBody');
+              await student.getByRole('button',{name:/مرآة التعلم/}).click();
+              const mirror=page.locator('#studentMirror');
+              await mirror.locator('select[name=week]').selectOption('14');
+              await mirror.getByRole('button',{name:/Listening/}).click();
+              await mirror.getByRole('button',{name:'فهمت الدرس واستمتعت.'}).click();
+              await mirror.getByText('حُفظ رأيكِ.',{exact:true}).waitFor();
+              assert.equal(await mirror.locator('[data-feeling]').count(),0);
+              await mirror.locator('textarea').fill('More examples');
+              await mirror.getByRole('button',{name:'حفظ الاقتراح'}).click();
+              await mirror.getByText('حُفظ اقتراحكِ.',{exact:true}).waitFor();
+              await student.locator('[data-section-back]').click();
               await student.getByRole('button',{name:/Fluency Horizons/}).click();
               const horizon=page.locator('#studentFluency');
               for(const skill of ['listening','speaking','reading','writing']){
@@ -181,13 +197,24 @@ jobs:
               await page.locator('#secureToggle').click();
               const teacherNav = page.locator('#teacherNav');
               await teacherNav.waitFor();
-              assert.equal(await teacherNav.locator('button').count(),16);
-              for (let i=0;i<16;i++) {
+              assert.equal(await teacherNav.locator('button').count(),17);
+              for (let i=0;i<17;i++) {
                 await teacherNav.locator('button').nth(i).click();
                 await page.locator('#teacherSectionTitle').waitFor();
                 await page.getByText('جارٍ تحميل القسم…').waitFor({state:'hidden'});
                 assert.equal(await teacherNav.isVisible(),false);
                 assert.equal(await page.evaluate(() => scrollY),0);
+                if(i===16){
+                  const mirror=page.locator('#teacherMirror');
+                  await mirror.getByRole('button',{name:/Listening/}).click();
+                  assert.equal(await mirror.locator('meter').first().getAttribute('value'),'50');
+                  await mirror.locator('[name=reflection]').fill('تأمل جديد');
+                  await mirror.locator('[name=action]').fill('إجراء جديد');
+                  await mirror.getByRole('button',{name:'حفظ التأمل والإجراء'}).click();
+                  await mirror.getByText('حُفظ التأمل والإجراء.',{exact:true}).waitFor();
+                  await mirror.getByRole('button',{name:/طباعة هذا الدرس/}).click();
+                  await page.locator('iframe[title="معاينة الطباعة"]').contentFrame().getByText('إجراء جديد',{exact:true}).waitFor({state:'attached'});
+                }
                 if(i===15){
                   const section=page.locator('#teacherFluency');
                   for(const skill of ['listening','speaking','reading','writing']){
