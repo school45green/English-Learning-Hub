@@ -27,6 +27,9 @@ jobs:
 
           const mock = `
           const lesson={id:'mg1-w14-1',title:'Listening',course:'Mega Goal 1',unit:5,unit_title:'Unit 5',week:14,counts:[1,1,0,0],reflection:'مثال تأمل',action:'مثال إجراء'};
+          const wbLessons=['Key Vocabulary','Listen & Discuss','Grammar','Conversation & Listening','Reading','Form, Meaning & Function','Final Challenge'].map((title,i)=>({id:'test-'+i,title,position:i+1,icon:'🛍️',published:true}));
+          const sample=[{type:'image',image:'sneakers',prompt:'Match the picture',choices:['sneakers','car'],correct:'sneakers'},{type:'correction',prompt:'Choose the correction',choices:['She can go','She can goes'],correct:'She can go'}];
+          const wbReport=[{full_name:'طالبة تجريبية',class_name:'Class B',title:'Reading',attempts:1,completed:1,best:50,scores:[50],unit:5,published:true}];
           export function createClient() {
             return {
               auth: {
@@ -46,6 +49,23 @@ jobs:
                 })
               }),
               rpc: async (name, args) => {
+                if(name==='hub_workbook'){
+                  const op=args.p_op,d=args.p_data;
+                  if(op==='catalog')return {data:[{id:'mock',course:'Mega Goal 3',unit:5,title:'Do You Really Need It?',lessons:wbLessons,vocabulary:[{group:'Reading',words:[{word:'commercial',en:'an advertisement',ar:'إعلان تجاري'}]}]}]};
+                  if(op==='edit')return {data:{questions:sample,classes:['c2'],students:[],published:true,revision:0}};
+                  if(op==='save')return {data:{}};
+                  if(op==='report')return {data:wbReport};
+                  const key='workbook-'+d.id;
+                  let state=JSON.parse(sessionStorage.getItem(key)||'{"step":0,"score":0}');
+                  if(d.retry)state={step:0,score:0};
+                  if(op==='answer'){
+                    state.correct=d.choice===sample[state.step].correct;state.expected=sample[state.step].correct;
+                    state.step++;state.score+=Number(state.correct);
+                  }
+                  sessionStorage.setItem(key,JSON.stringify(state));
+                  const q=sample[state.step];
+                  return {data:{...state,id:key,total:sample.length,completed:!q,question:q?{...q,correct:undefined}:null}};
+                }
                 if(name==='hub_learning_mirror'){
                   if(args.p_op==='vote')sessionStorage.setItem('mirror-vote','1');
                   return {data:['report','lessons'].includes(args.p_op)?[{...lesson,voted:sessionStorage.getItem('mirror-vote')==='1'}]:{}};
@@ -64,9 +84,9 @@ jobs:
                   sessionStorage.setItem('mockUsed','1');
                   return {data:'test-session'};
                 }
-                if(name==='hub_leadership_session')return {data:{role:'principal',report:{classes:[],plans:[],results:[],honors:[],mirror:[lesson]}}};
+                if(name==='hub_leadership_session')return {data:{role:'principal',report:{classes:[],plans:[],results:[],honors:[],mirror:[lesson],workbook:wbReport}}};
                 if(name==='hub_leadership_report')return args.p_key==='test-only'?{data:{classes:[],plans:[],results:[],honors:[]}}:{error:{message:'Forbidden'}};
-                if (name === 'hub_family') return {data:{student:{name:'طالبة تجريبية'},activities:[],plans:[],results:[],honors:[],messages:[]}};
+                if (name === 'hub_family') return {data:{student:{name:'طالبة تجريبية'},activities:[],plans:[],results:[],honors:[],messages:[],workbook:wbReport}};
                 if (name === 'hub_login_classes') return {data:[{id:'test-class',name:'فصل وهمي',grade_level:'أول ثانوي'}]};
                 if (name === 'hub_student_sign_in' && args.p_pin === '0042') return {data:{
                   token:'fictional-token',
@@ -159,6 +179,33 @@ jobs:
               await form.locator('[name=pin]').fill('0042');
               await form.locator('button').click();
               const student = page.locator('#secureBody');
+              await student.getByRole('button',{name:/مكتبة الوحدات/}).click();
+              await page.locator('#studentWorkbooks summary').getByText('Mega Goal 3',{exact:true}).click();
+              await page.locator('#studentWorkbooks summary').getByText('Unit 5',{exact:true}).click();
+              await page.locator('#studentWorkbooks').getByRole('button',{name:/Interactive Workbook/}).click();
+              const book=page.locator('.workbook-dialog');
+              assert.equal(await book.locator('[data-lesson]').count(),7);
+              await book.getByRole('button',{name:/Key Vocabulary/}).click();
+              await book.getByRole('button',{name:'نطق commercial'}).waitFor();
+              await book.locator('[data-workbook=home]').click();
+              await book.getByRole('button',{name:/Listen & Discuss/}).click();
+              await book.locator('img').waitFor();
+              await book.getByRole('button',{name:'sneakers',exact:true}).click();
+              await book.getByText('✅ إجابة صحيحة!',{exact:true}).waitFor();
+              await book.locator('[data-workbook=home]').click();
+              await book.getByRole('button',{name:/Listen & Discuss/}).click();
+              await book.getByText('Choose the correction',{exact:true}).waitFor();
+              await book.getByRole('button',{name:'She can goes',exact:true}).click();
+              await book.getByText('الإجابة المناسبة: She can go',{exact:true}).waitFor();
+              await book.getByRole('button',{name:'عرض النتيجة'}).click();
+              await book.getByText('النتيجة 1 من 2',{exact:true}).waitFor();
+              await book.getByRole('button',{name:'إعادة المحاولة'}).click();
+              await book.getByText('Match the picture',{exact:true}).waitFor();
+              await book.locator('[data-workbook=home]').click();
+              await book.getByRole('button',{name:'تقرير الإنجاز'}).click();
+              await book.getByText('أفضل درجة',{exact:true}).waitFor();
+              await book.getByRole('button',{name:'إغلاق الملزمة'}).click();
+              await student.locator('[data-section-back]').click();
               await student.getByRole('button',{name:/مرآة التعلم/}).click();
               const mirror=page.locator('#studentMirror');
               await mirror.locator('select[name=week]').selectOption('14');
@@ -280,6 +327,19 @@ jobs:
                   assert.equal(await actions.locator('article').count(),1);
                 }
                 if(i===3){
+                  await page.locator('summary').getByText('Mega Goal 3',{exact:true}).click();
+                  await page.locator('summary').getByText('Unit 5',{exact:true}).click();
+                  await page.getByRole('button',{name:/Interactive Workbook/}).click();
+                  await book.getByRole('button',{name:/Grammar/}).click();
+                  await book.getByRole('button',{name:'معاينة التدريب'}).click();
+                  await book.getByText('معاينة المعلمة دون حفظ محاولة',{exact:true}).waitFor();
+                  await book.locator('[data-workbook=home]').click();
+                  await book.getByRole('button',{name:/Grammar/}).click();
+                  await book.getByRole('checkbox',{name:/إتاحة الدرس/}).uncheck();
+                  await book.getByRole('button',{name:'حفظ الدرس'}).click();
+                  await book.getByText('حُفظ الدرس وإعدادات الإتاحة.',{exact:true}).waitFor();
+                  await book.getByRole('button',{name:/Grammar.*مغلق/}).waitFor();
+                  await book.getByRole('button',{name:'إغلاق الملزمة'}).click();
                   for(const name of ['Mega Goal 1','Unit 2','Reading','Reading practice'])
                     await page.locator('summary').getByText(name,{exact:true}).or(page.locator('summary').filter({hasText:new RegExp('^'+name+'$')})).first().click();
                   await page.getByRole('button',{name:'تنزيل المرفق'}).waitFor();

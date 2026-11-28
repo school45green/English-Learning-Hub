@@ -1,4 +1,4 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta name="referrer" content="no-referrer"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>English Learning Hub</title><style>
+<!doctype html><html lang="ar" dir="rtl"><head><meta name="referrer" content="no-referrer"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>English Learning Hub</title><link rel="stylesheet" href="./assets/workbook.css"><style>
 :root{font-family:system-ui,'Segoe UI',sans-serif;color:#163e39;background:#f7f7f3}*{box-sizing:border-box}body{margin:0}header{background:linear-gradient(115deg,#104e46,#237b70 60%,#ab8a44);color:white;padding:35px 20px 55px;text-align:center}header h1{font-family:Georgia,serif;font-size:clamp(26px,5vw,43px);margin:8px}header p{opacity:.9}.wrap{max-width:1120px;margin:-30px auto 50px;padding:0 18px}.panel{background:white;border-radius:22px;box-shadow:0 12px 35px #1d3c3214;padding:22px;margin-bottom:22px}.nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}.tile{cursor:pointer;border:1px solid #ffffffaa;border-radius:18px;padding:22px 16px;min-height:108px;text-align:right;color:#173a35;box-shadow:0 6px 16px #122e2610;transition:transform .15s}.tile:hover{transform:translateY(-3px)}.tile .emoji{font-size:28px;display:block;margin-bottom:8px}.tile b{font-size:16px}.tile:nth-child(6n+1){background:#dcf1e9}.tile:nth-child(6n+2){background:#e6e9ff}.tile:nth-child(6n+3){background:#dff1ff}.tile:nth-child(6n+4){background:#fce5ee}.tile:nth-child(6n+5){background:#fff0cb}.tile:nth-child(6n){background:#eae4ff}.tag{display:inline-block;background:#fff3d0;color:#755719;padding:7px 13px;border-radius:20px;font-size:13px;font-weight:700}button,input,select,textarea{font:inherit}button.action{border:0;background:#176b5e;color:white;padding:11px 17px;border-radius:12px;cursor:pointer;margin:5px 0}button.secondary{background:#eee;color:#24463d}input,select,textarea{padding:11px;border:1px solid #cbd8d4;border-radius:10px;max-width:100%;margin:5px}textarea{width:100%;min-height:85px}h2{margin:0 0 14px}h3{margin:18px 0 8px}.muted{color:#65736d}.hidden{display:none}.flex{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.notice{background:#fff8df;padding:15px;border-radius:12px;border:1px solid #e7d9a8;margin:14px 0}table{border-collapse:collapse;width:100%;font-size:14px}td,th{padding:11px;border-bottom:1px solid #eee;text-align:right}.scroll{overflow:auto}.quiz-option{display:block;padding:10px;background:#f4f8f7;border-radius:10px;margin:8px 0;cursor:pointer}footer{text-align:center;color:#697b74;padding:25px}@media(max-width:500px){header{padding-top:24px}.nav{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.tile{padding:15px 11px;min-height:104px}.tile b{font-size:13px}.panel{padding:16px}.wrap{padding:0 11px}}
 .secure-field{width:min(100%,460px);display:block}.secure-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.secure-card{background:#f4f9f6;border:1px solid #deebe5;border-radius:14px;padding:16px;margin:10px 0}.secure-card h3{margin:0 0 10px}.secure-card input,.secure-card select{width:100%;margin:6px 0}.secure-card label{display:block}.error{color:#a32929}.success{color:#126345}.secure-table{overflow:auto}.secure-table table{min-width:430px}@media(max-width:500px){.secure-grid{grid-template-columns:1fr}}
 .report-bar{display:grid;grid-template-columns:minmax(0,1fr) minmax(75px,32%) 3em;gap:.5rem;align-items:center;margin:.45rem 0}
@@ -61,6 +61,7 @@ const tourDescriptions=[
 ];
 function show(i){shell(i,`<p class="notice">${tourDescriptions[i]}</p>`)}
 </script><script type="module">
+import {workbookLink,workbookReport} from "./assets/workbook.js";
 import {mountMirror} from "./assets/learning-mirror.js";
 import {mountFluency,progressView} from "./assets/fluency.js";
 import {downloadWorkbook,printPrivateTable} from "./assets/spreadsheet.js";
@@ -243,6 +244,25 @@ function learningTasks(data,remedial){
   }
   if(['reading','listening'].includes(data.mode))return learningPairs(data.practice,data.mode,()=>1);
   return [{skill:data.mode,day:1,prompt:data.practice.trim(),expected:null}];
+}
+function workbookOptions(code,teacher=false,classes=[],students=[]){
+  return {teacher,classes,students,rpc:(p_op,p_data)=>checked(client.rpc('hub_workbook',{p_op,p_data,p_token:code?.token??null}))};
+}
+async function studentWorkbooks(root,code){
+  const options=workbookOptions(code);
+  try{
+    const books=await options.rpc('catalog',{});
+    if(!root.isConnected)return;
+    for(const book of books||[]){
+      const course=document.createElement('details');
+      const unit=document.createElement('details');
+      course.className=unit.className='secure-card';
+      const label=name=>{const summary=document.createElement('summary');summary.textContent=name;return summary};
+      unit.append(label('Unit '+book.unit),workbookLink(book,options));
+      course.append(label(book.course),unit);
+      root.append(course);
+    }
+  }catch(error){if(root.isConnected)root.textContent='تعذّر تحميل الملزمة: '+error.message}
 }
 function mirror(root,code,teacher=false){
   mountMirror(root,{teacher,rpc:(p_op,p_data)=>checked(client.rpc('hub_learning_mirror',{p_op,p_data,p_token:code?.token??null}))});
@@ -488,6 +508,7 @@ async function teacherLoad(refresh=false){
     form('restoreHonor',select('id','التكريم المؤرشف',options(honorItems.filter(x=>x.archived_at),x=>studentName(x.student_id)+' — '+x.title)),'استعادة التكريم')+
     form('attachHonorMedia',select('id','التكريم',options(honorItems.filter(x=>!x.archived_at),x=>studentName(x.student_id)+' — '+x.title))+
       fields('file','صورة مصرح بها أو فيديو MP4 قصير (حتى 1.5 ميغابايت)','type="file" accept=".jpg,.jpeg,.png,.mp4"'),'رفع المرفق'));
+  let books=[],workbookTeacher;
   let body='';
   switch(current){
     case 0:
@@ -517,14 +538,19 @@ async function teacherLoad(refresh=false){
     case 2: body=card('الاختبارات المحفوظة',
       '<div class="flex" id="quizFilters">'+filter('qGrade','المرحلة',[...new Set(classes.map(c=>c.grade_level).filter(Boolean))].map(id=>({id})),x=>x.id)+filter('qClass','الفصل',classes,x=>x.name)+filter('qUnit','الوحدة',[...new Set(saved.map(a=>a.unit_no).filter(x=>x!=null))].sort((a,b)=>a-b).map(id=>({id})),x=>x.id)+filter('qState','الحالة',['منشور','مسودة','مغلق'].map(id=>({id})),x=>x.id)+'</div><div id="quizList"></div><div id="quizDetail" tabindex="-1"></div>')+activityForm+publishing;break;
     case 3: {
-      const courses=new Set(['Mega Goal 1','Mega Goal 3',...activities.map(a=>a.course)]);
+      workbookTeacher=workbookOptions(null,true,classes.filter(c=>!c.archived_at),students.filter(s=>s.active));
+      try{books=await workbookTeacher.rpc('catalog',{})||[]}catch{books=[]}
+      if(version!==viewVersion)return;
+      const courses=new Set(['Mega Goal 1','Mega Goal 3',...activities.map(a=>a.course),...books.map(b=>b.course)]);
       body=Array.from(courses,course=>{
         const list=saved.filter(a=>a.course===course);
-        const units=[...new Set(list.map(a=>a.unit_no))].sort((a,b)=>(a??Infinity)-(b??Infinity));
+        const units=[...new Set([...list.map(a=>a.unit_no),...books.filter(b=>b.course===course).map(b=>b.unit)])].sort((a,b)=>(a??Infinity)-(b??Infinity));
         const content=units.map(unit=>{
           const items=list.filter(a=>a.unit_no===unit);
           const lessons=[...new Set(items.map(a=>a.skill?.trim()||'درس غير محدد'))];
+          const book=books.find(b=>b.course===course&&b.unit===unit);
           return `<details class="secure-card"><summary>${unit==null?'وحدة غير محددة':'Unit '+safe(unit)}</summary>`+
+            (book?`<div data-unit-workbook="${safe(book.id)}"></div>`:'')+
             lessons.map(lesson=>`<details class="secure-card"><summary>${safe(lesson)}</summary>`+
               items.filter(a=>(a.skill?.trim()||'درس غير محدد')===lesson).map(a=>
                 `<details class="secure-card" data-resource="${safe(a.id)}"><summary>${safe(a.title)}</summary><p>${a.published?'منشور':'مسودة'}</p><div aria-live="polite"></div></details>`).join('')+'</details>').join('')+'</details>';
@@ -562,6 +588,9 @@ async function teacherLoad(refresh=false){
   }
   const focusTitle=document.activeElement?.id==='teacherSectionTitle';
   showTeacherSection(body);
+  for(const node of $('secureBody').querySelectorAll('[data-unit-workbook]')){
+    node.append(workbookLink(books.find(b=>b.id===node.dataset.unitWorkbook),workbookTeacher));
+  }
   if(current===16)mirror($('teacherMirror'),null,true);
   if(current===15)fluency($('teacherFluency'),null,true,classes.filter(c=>!c.archived_at),students.filter(s=>s.active));
   for(const item of $('secureBody').querySelectorAll('[data-resource]')){
@@ -1061,8 +1090,10 @@ function renderLead(root,role,report,logout){
         ['🏆','إنجازات الطالبات',table(['الطالبة','الفصل','التكريم','الأسبوع'],report.honors.map(h=>[h.full_name,h.class_name,h.title,h.week_start]))]
       ];
       panels.push(['🌟','آفاق الطلاقة','<div id="adminFluency"></div>'],['🪞','التأمل الذاتي | مرآة التعلم','<div id="adminMirror"></div>']);
+      panels.push(['🛍️','تقارير الملزمة التفاعلية','<div id="adminWorkbooks"></div>']);
       root.innerHTML='<h2>لوحة '+leadNames[role]+'</h2><p>للاطلاع فقط</p>'+sectionMenu(panels)+panels.map(([,name,body])=>sectionPanel(name,body)).join('')+'<button class="action secondary" id="leadExit">تسجيل الخروج</button>';
       installSectionBoard(root);
+      $('adminWorkbooks').append(workbookReport(report.workbook||[]));
       $('adminFluency').append(progressView(report.fluency));
       mountMirror($('adminMirror'),{report:report.mirror||[]});
       $('leadExit').onclick=logout;
@@ -1155,10 +1186,11 @@ const pages=[['📝','أنشطتي'],['📊','درجاتي'],['📚','مكتبة
 root.innerHTML=`<div class="secure-card"><h3>مرحبًا ${safe(student.full_name||student.name||'بكِ')}</h3><p>${safe(student.class_name||'')}</p></div>`+
 sectionMenu(pages)+sectionPanel(pages[0][1],'<p id="studentActivityStatus" role="status"></p><div id="myActivities"></div>')+
 sectionPanel(pages[1][1],'<div id="myResults"></div>')+
-sectionPanel(pages[2][1],table(['الوحدة','النشاط','المهارة'],[...activities].sort((a,b)=>(a.unit??0)-(b.unit??0)).map(a=>[a.unit,a.title,a.skill])))+
+sectionPanel(pages[2][1],'<div id="studentWorkbooks"></div>'+table(['الوحدة','النشاط','المهارة'],[...activities].sort((a,b)=>(a.unit??0)-(b.unit??0)).map(a=>[a.unit,a.title,a.skill])))+
 sectionPanel(pages[3][1],['remedial','enrichment'].map(kind=>card(kind==='remedial'?'خططي العلاجية':'خططي الإثرائية',
 table(['الخطة','التعليمات','الموعد','الحالة'],(data.plans||[]).filter(x=>x.kind===kind).map(x=>[x.title,x.instructions,x.due_on,x.completed?'مكتملة':'قيد التنفيذ'])))).join('')+'<div id="myLearning"></div>')+
 sectionPanel(pages[4][1],'<div id="myHonorDetails">جارٍ التحميل…</div>')+sectionPanel(pages[5][1],'<div id="studentFluency"></div>')+sectionPanel(pages[6][1],'<div id="studentMirror"></div>');
+void studentWorkbooks($('studentWorkbooks'),code);
 mirror($('studentMirror'),code);
 fluency($('studentFluency'),code);
 installSectionBoard(root,restore,$('closeSecure'));
@@ -1245,12 +1277,13 @@ function openFamily(){
           .map(x=>[x.title,labels[x.kind]||x.kind,x.unit_no,x.skill,x.instructions,x.due_on,x.completed?'مكتملة':'قيد التنفيذ'])))+
         sectionPanel(pages[2][1],table(['النشاط','الدرجة','من','التاريخ'],data.results.map(x=>[
           x.title,x.score,x.max_score,new Intl.DateTimeFormat('ar-SA',{dateStyle:'short',timeStyle:'short'}).format(new Date(x.submitted_at))
-        ])))+
+        ]))+(data.workbook?.length?'<h3>الملزمة التفاعلية</h3><div id="familyWorkbooks"></div>':''))+
         sectionPanel(pages[3][1],table(['العنوان','التاريخ'],data.honors.map(x=>[x.title,x.week_start])))+
         sectionPanel(pages[4][1],table(['الرسالة','الرد'],data.messages.map(x=>[x.message,x.teacher_reply]))+
           '<form id="sendFamily"><label>رسالة <textarea name="message" required maxlength="1000"></textarea></label><button class="action">إرسال</button></form>')+
         sectionPanel(pages[5][1],'<div id="familyFluency"></div>')+
         '<button class="action secondary" id="exitFamily">تسجيل الخروج</button>';
+      $('familyWorkbooks')?.append(workbookReport(data.workbook));
       $('familyFluency').append(progressView(data.fluency));
       $('familyHome').hidden=true;
       installSectionBoard(root,restore);
