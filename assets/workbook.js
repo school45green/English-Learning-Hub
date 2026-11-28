@@ -30,11 +30,10 @@ export function workbookReport(rows=[]){
   return root;
 }
 
-function chime(){
+function chime(audio){
+  if(!audio||audio.state!=='running')return;
   try{
-    const Audio=window.AudioContext||window.webkitAudioContext;
-    if(!Audio)return;
-    const audio=new Audio(), gain=audio.createGain();
+    const gain=audio.createGain();
     gain.gain.setValueAtTime(.12,audio.currentTime);
     gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+.23);
     gain.connect(audio.destination);
@@ -42,7 +41,7 @@ function chime(){
     tone.frequency.setValueAtTime(587.3,audio.currentTime);
     tone.frequency.setValueAtTime(783.99,audio.currentTime+.09);
     tone.connect(gain);tone.start();tone.stop(audio.currentTime+.24);
-    tone.onended=()=>{void audio.close()};
+    tone.onended=()=>{tone.disconnect();gain.disconnect()};
   }catch{/* Sound is optional on browsers without audio access. */}
 }
 
@@ -59,7 +58,8 @@ function openWorkbook(book,{rpc,teacher=false,classes=[],students=[]},entry){
   dialog.innerHTML='<header class="workbook-heading"><span>🛒 '+escape(book.course)+' • Unit '+escape(book.unit)+'</span><h2 lang="en">'+escape(book.title)+'</h2>'+
     '<p>'+workbookTitle+'</p>'+button('إغلاق الملزمة','close')+'</header><div class="workbook-content"><p role="status" data-message></p><div data-view></div></div>';
   entry.after(dialog);
-  dialog.addEventListener('close',()=>{dialog.remove();if(entry.isConnected)entry.focus()},{once:true});
+  let audio;
+  dialog.addEventListener('close',()=>{if(audio)void audio.close().catch(()=>{});dialog.remove();if(entry.isConnected)entry.focus()},{once:true});
   dialog.querySelector('[data-workbook=close]').onclick=()=>dialog.close();
   dialog.showModal();
   const view=dialog.querySelector('[data-view]'), message=dialog.querySelector('[data-message]');
@@ -110,6 +110,12 @@ function openWorkbook(book,{rpc,teacher=false,classes=[],students=[]},entry){
     const choices=[...view.querySelectorAll('[data-choice]')];
     for(const b of choices)b.onclick=async()=>{
       choices.forEach(c=>c.disabled=true);
+      if(!muted){
+        try{
+          const Audio=window.AudioContext||window.webkitAudioContext;
+          if(Audio){audio??=new Audio();void audio.resume().catch(()=>{})}
+        }catch{/* Audio support varies by device. */}
+      }
       try{
         const chosen=state.question.choices[Number(b.dataset.choice)];
         const correct=chosen===state.question.correct;
@@ -117,7 +123,7 @@ function openWorkbook(book,{rpc,teacher=false,classes=[],students=[]},entry){
           await call('answer',{id:lesson.id,attempt:state.id,step:state.step,choice:chosen});
         if(next.completed&&!preview)lesson.completed=true;
         if(!b.isConnected)return;
-        if(next.correct&&!muted)chime();
+        if(next.correct&&!muted)chime(audio);
         const feedback=view.querySelector('[data-feedback]');
         feedback.textContent=next.correct?'✅ إجابة صحيحة!':'الإجابة المناسبة: '+next.expected;
         view.querySelector('[data-next]').innerHTML=button(next.completed?'عرض النتيجة':'السؤال التالي','next');
